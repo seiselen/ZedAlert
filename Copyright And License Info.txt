@@ -1,0 +1,12 @@
+### COPYRIGHT AND LICENSE NOTICE ###
+
+© 2021 Steven Eiselen
+All Rights Reserved (sans otherwise specified in this document)
+
+The Zed Alert Concept and Design Document were created and developed by Steven Eiselen, with initial Copyright © 2011.
+
+Zed Alert is a Steven Eiselen Production (a/o 12/06/21); though such is subject to change in the future (e.g. [co]developer and/or publisher adopting it towards providing the [additional] resources needed for a full production and release).
+
+The 'Survival Horror RTS' genre as described within the Zed Alert Design Document can be assumed equivalent to that made within a published research paper; i.e. if it has not yet been described: I assert credit for being the first to do so.
+
+Code (i.e. Demos, Examples, Experiments) published to this repo can be assumed to have a MIT Software License applied thereto; especially as I plan to describe as much of the greater implementation as possible for educational / tutorial purposes.
