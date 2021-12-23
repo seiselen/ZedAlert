@@ -1,23 +1,14 @@
-/*======================================================================
-|>>> Class SoundMap
-+-----------------------------------------------------------------------
-|# QAD Notes
-|  > Cell Values: 
-|    o [-1]    => Sound Blocked (i.e. is building, ergo won't spread it)
-|    o [0]     => Sound Expired (i.e. no longer 'interests' listeners)
-|    o [1,100] => Sound Active  (i.e. none of the above, 'Nuff Said)
-|  > Cell Directions: |7 8 1|    |NW  N  NE|    |RL  T  TR|
-|                     |6 0 2| => | W ORG  E| => | L CTR  R|
-|                     |5 4 3|    |SW  S  SE|    |BL  B  BR|
-+=====================================================================*/
+
+
 var Direction = {
   'O':0, 'ORG':0, 'NE':1, 'E':2, 'SE':3, 'S':4, 'SW':5, 'W':6, 'NW':7, 'N':8, 
   'C':0, 'CTR':0, 'TR':1, 'R':2, 'BR':3, 'B':4, 'BL':5, 'L':6, 'TL':7, 'T':8,
   'X':9, // 'X' => None/Expired/Unknown (i.e. val is zero, cell blocks sound, etc.)
-  'glyph':['•','⬈','⮕','⬊','⬇','⬋','⬅','⬉','⬆','∅']
+  'glyph':['+','⬈','⮕','⬊','⬇','⬋','⬅','⬉','⬆',' ']
 };
 
-class SoundMapCell{
+
+class ScentMapCell{
   constructor(r,c,mpt){
     this.row = r;
     this.col = c;
@@ -27,13 +18,13 @@ class SoundMapCell{
   }
 
   update(){
-    if(this.val>0.25){this.val*=0.95;}
+    if(frameCount%16==0 && this.val>0.25){this.val*=0.98;}
     if(this.val<1){this.dir = Direction.X;} // could throw as 2nd statement of above, but leaving alone now to KISS
   }
 
-  hearSound(coord,sndVal){
+  gainScent(coord,sVal){
     this.setDirViaCoord(coord);
-    this.val+=sndVal;
+    this.val+=sVal;
   }
 
   setDirViaCoord(coord){
@@ -44,7 +35,9 @@ class SoundMapCell{
 
 }
 
-class SoundMap{
+
+
+class ScentMap{
 
   constructor(cW,cT,cS){
     this.cellsWide = cW;
@@ -58,23 +51,22 @@ class SoundMap{
     this.initColorPallete();
   } // Ends Constructor
 
-  //##################################################################
+  //####################################################################
   //>>> LOADER AND INIT FUNCTIONS
-  //##################################################################
+  //####################################################################
 
   initColorPallete(){
-    //>>> Cell Colormap-Related Settings
-    this.col_hmap1 = color(180,180,216);
-    this.col_hmap2 = color(255,255,0);
+    //>>> Cell Colormap-Related Settings 
+    this.col_hmap1 = color(228);
+    this.col_hmap2 = color(0,240,60);
 
     //>>> Grid-Related Settings
     this.strk_grid = color(60,128);    
     this.sWgt_grid = 2; 
 
     //>>> Text-Related Settings
-    this.fill_text = color(60); // text labels
+    this.fill_text = color(0);   // text labels
     this.size_text = 20;         // font size
-
   } // Ends Function initColorPallete
 
 
@@ -83,15 +75,15 @@ class SoundMap{
     for (var r = 0; r < this.cellsTall; r++) {
       this.map[r]=[];
       for (var c = 0; c < this.cellsWide; c++) {
-        this.map[r].push(new SoundMapCell(r,c,this.coordToPos([r,c])));
+        this.map[r].push(new ScentMapCell(r,c,this.coordToPos([r,c])));
       }
     }
   } // Ends Function initSPGridViaRegObj
 
 
-  //##################################################################
+  //####################################################################
   //>>> UPDATE FUNCTIONS (I.E. PER-FRAME)
-  //##################################################################
+  //####################################################################
   update(){
     this.updateCells();
   }
@@ -104,28 +96,33 @@ class SoundMap{
     }    
   }
 
-  //##################################################################
+
+  //####################################################################
   //>>> ACTION/EVENT FUNCTIONS
-  //##################################################################
+  //####################################################################
 
-  makeASound(sPos, sRad){
-    let coord   = this.posToCoord(sPos);
-    let sMpt     = this.posToMidpt(sPos);
-    let cellRad = floor(sRad/this.cellSize);
-    let sRadSqd = sRad*sRad;
-    for(let r=coord[0]-cellRad; r<=coord[0]+cellRad; r++){
-      for(let c=coord[1]-cellRad; c<=coord[1]+cellRad; c++){
-        if(this.cellInBounds(r,c) && distSq(sMpt,this.map[r][c].mpt) <= sRadSqd){
-          this.map[r][c].hearSound(coord,soundAddVal);
+  // for this demo: map is NOT servicing SP, nor does it need to know which agent notifies it
+  updatePos(oldCoord,newCoord){
+    this.map[oldCoord[0]][oldCoord[1]].gainScent(newCoord,curScentPts);
+
+    // QAD Experiment: 'spread scent' to moore neighbors by 15% of score if score is over 100
+    /*
+    let row = oldCoord[0];
+    let col = oldCoord[1];
+    let val = this.map[row][col].val;
+    if(val>=100){
+      for(let r=row-1; r<=row+1; r++){ for(let c=col-1; c<=col+1; c++){
+        if( (r!=row || c!=col) && this.cellInBounds(r,c)){
+          this.map[r][c].gainScent(oldCoord,val*0.15);
         }
-      }
+      }}
     }
-  }
+    */
+  } // Ends Function updatePos
 
-
-  //##################################################################
+  //####################################################################
   //>>> GENERAL UTIL FUNCTIONS (incl. [TEMP] debug/tester)
-  //##################################################################
+  //####################################################################
 
   posToCoord(pos){return [floor(pos.y/this.cellSize),floor(pos.x/this.cellSize)];}
   coordToPos(rc){return vec2((rc[1]*this.cellSize)+this.cellSizeH, (rc[0]*this.cellSize)+this.cellSizeH);}
@@ -148,11 +145,18 @@ class SoundMap{
     }    
   }
 
+  setValsToHundred(){
+    for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        this.map[r][c].val=100;;
+      }
+    }     
+  }
 
-  //##################################################################
+
+  //####################################################################
   //>>> RENDER FUNCTIONS
-  //##################################################################
-
+  //####################################################################
   render(){
     this.renderHeatmap();
     this.renderDirGlyphs();
@@ -160,7 +164,8 @@ class SoundMap{
   }
 
   renderDirGlyphs(){
-    fill(this.fill_text); noStroke(); textAlign(CENTER,CENTER); textSize(this.size_text);
+    fill(this.fill_text); noStroke();
+    textAlign(CENTER,CENTER); textSize(this.size_text);
     for(let r=0; r<this.cellsTall; r++){
       for(let c=0; c<this.cellsWide; c++){
         text(Direction.glyph[this.map[r][c].dir], (c*this.cellSize)+this.cellSizeH, (r*this.cellSize)+this.cellSizeH);
