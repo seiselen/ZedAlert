@@ -1,9 +1,20 @@
-/*>>> AS-YOU-BUILD NOTES:
+/*======================================================================
+|>>> Class GameMap                                     [ZED ALERT - MVP]
++-----------------------------------+-----------------------------------
+| Author:    Steven Eiselen         | Language:  JavaScript 
+| Project:   Zed Alert a.k.a. ZAC   | Library:   P5JS (p5js.org/)
++-----------------------------------+-----------------------------------
+| Description: x
+| Variables:
++-----------------------------------------------------------------------
+| [AS-YOU-BUILD] Implementation Notes:
+|  > WRT StAgE: [Body Unit] SteeringMotor components will [now] refer to
+|    HERE for flowfields to follow; i.e. for the scent and sound layers.
++-----------------------------------------------------------------------
+|########## Zed Alert concept and code[base] © Steven Eiselen ##########
++=====================================================================*/
 
---> Steering Agents/Motors will [now] ref HERE for scent/sound flowfields to follow
 
-
-*/
 var TileType = {};
 var 
 
@@ -40,12 +51,11 @@ class GameMap{
 
   }
 
-
-}
-
+} // Ends Class GameMap
 
 
-/*
+
+/*>>> METHODS TO IMPLEMENT VIS-A-VIS 'MASTER LIST VIA PREV/SIDE PROJS'
 
 //======================================================================
 //>>> Init and Loader Functions
