@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8"/>
+    <title>StAgE-2: Arrival Accelerate/Decelerate Experiment</title>
+    <style>
+      body {color: darkblue; font-family: verdana;}
+      #h1_header {background: #3c3c3c; color: white; margin-block-start: 0px; margin-block-end: 0px; max-width: 1024px;}
+      #pane_viz {width: 1024px; height: 512px;} 
+      #pane_ui {width: 1024px; height: 88px;}
+      #table_ui {margin-left: auto; margin-right: auto; border-collapse: collapse ; border: 1px solid #FFFFFFFF}
+      #table_ui td {color: white; vertical-align: middle; padding-top: 2px; padding-bottom: 2px;}
+      #table_ui tr:nth-child(1){border-bottom: 1px solid #FFFFFF80;}
+      #table_ui tr:nth-child(2){border-bottom: 1px solid #FFFFFF80; border-top: 1px solid #FFFFFF80;}
+      #table_ui tr:nth-child(3){border-top: 1px solid #FFFFFF80;}      
+      .pane_col {background: #3c3c3c; vertical-align: top;}      
+      .lab_thing  {font-size: 18px; min-width: 108px;}
+      .lab_curVal {font-size: 18px; min-width: 52px; text-align: center;}
+      #butList {list-style-type: none; padding: 2px 4px; margin: 0px; text-align: center;}
+      #butList li {margin: 4px;}      
+      #butList button {font-size: 18px;}
+    </style>
+    <!-- P5JS Lib Imports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://seiselen.github.io/PROJECT-BROADGATE/utils.js"></script>
+    <!-- Project Code -->
+    <script src="misc_objs.js"></script>    
+    <script src="agent.js"></script>
+    <script src="main.js"></script>
+  </head>
+  <body>
+  	<h1 id="h1_header">&nbspArrival Accelerate/Decelerate Experiment (StAgE-2)</h1>
+    <div class="pane_col" id="pane_viz"></div>
+    <div class="pane_col" id="pane_ui">
+      <table id="table_ui">
+        <tr>
+          <td class="lab_thing">Slow Dist</td><td id="slider_slowDist"></td><td class="lab_curVal" id="label_slowDist"></td>
+          <td rowspan="3" id="opButts"><ul id="butList"><li id="but_start"></li><li id="but_reset"></li></ul></td>
+        </tr>
+        <tr><td class="lab_thing">Max Speed</td><td id="slider_maxSpeed"></td><td class="lab_curVal" id="label_maxSpeed"></td></tr>
+        <tr><td class="lab_thing">Max Force</td><td id="slider_maxForce"></td><td class="lab_curVal" id="label_maxForce"></td></tr>    
+      </table> 	
+    </div>
+    </svg>
+  </body>
+</html>
