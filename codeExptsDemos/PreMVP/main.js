@@ -1,22 +1,29 @@
 
+
+var myMap;
 var myGO;
 
 function setup(){
-  createCanvas(800,800).parent("viz");
+  createCanvas(1024,768).parent("viz");
 
   myGO = new GameObject(vec2(400,400));
+
+  myMap = new GameMap(24,32,32);
+  myMap.initTileMap();
+  myMap.loadMap(map_01);
 
 }
 
 function draw(){
-  background(216,228,240);
+  background(12,12,60);
 
-  myGO.pointAtMouse();
+  //myGO.pointAtMouse();
+  //myGO.renderAxes();
 
-  myGO.renderAxes();
+  myMap.render();
 
   drawCanvasBorder();
-  drawFPS();
+  if(mouseInCanvas()){drawFPS()};
 }
 
 

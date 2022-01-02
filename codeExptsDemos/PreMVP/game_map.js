@@ -13,15 +13,19 @@
 |########## Zed Alert concept and code[base] © Steven Eiselen ##########
 +=====================================================================*/
 
-var TileType = {'dirt':0, 'grass':1, /* etc... */};
+var TileType = {
+  road:     1,
+  pave:     2,
+  dirt:    16,
+  gras:    32,
+  sand:    64,
+  watr:  1024,
+  ERROR: 9999
+}
 
 
 class GameMap{
   constructor(cT,cW,cS,mapInfo){
-    //##################################################################
-    //>>> DATA STRUCTURE / VARIABLE DECLARATIONS (AND INITS A/A)
-    //##################################################################
-
     //> General/Shared Map Info
     this.cellsTall = cT;
     this.cellsWide = cW;
@@ -30,15 +34,14 @@ class GameMap{
     this.cellQuar  = this.cellSize/4;
     this.areaWide  = this.cellsWide*this.cellSize;
     this.areaTall  = this.cellsTall*this.cellSize;    
-
-    //> [Sub] Layer Map Info
+    //> Map 'Layers'
     this.map_tile  = []; // cell type (e.g. buildable, enemyPath, etc.) for rendering and unit speed purposes
     this.map_SP    = []; // spatial partition info (i.e. agents reported in each cell) for a BUNCH of uses
     this.map_scent = []; // vector flow-field s.t. zombies can track traces left by humans passing over cells
     this.map_sound = []; // vector flow-field s.t. zombies and human NPCs can track recent [loud] sounds
 
     //> UI/UX Toggle Configs
-    this.showGrid     = false; // show cell grid   (def:false)
+    this.showGrid     = true; // show cell grid   (def:false)
     this.showCoords   = false; // show cell coords (def:false)
     this.showTileMap  = true;  // show map tiles   (def:true)
     this.showSPMap    = false; // show SP map      (def:false)
@@ -50,27 +53,49 @@ class GameMap{
     this.scentMapMode = 0;     // [0]-> values     | [1]-> glyphs
     this.soundMapMode = 0;     // [0]-> values     | [1]-> glyphs
 
-  }
+    this.initColorPallete();
+  } // Ends Constructor
 
 
+//######################################################################
+//>>> Init Functions
+//######################################################################
 
-
-  //====================================================================
-  //>>> Init and Loader Functions
-  //====================================================================
 
   initColorPallete(){
+    //> Grid-Related Settings
     this.strk_grid = color(60,128);    
     this.sWgt_grid = 2; 
 
-    //>>> Text-Related Settings
+    //> Tile-Map Settings
+    this.fill_terr_road = color(120, 120, 120); /* color( 82,  82,  82);*/
+    this.fill_terr_pave = color(162, 162, 162);    
+    this.fill_terr_dirt = color(144,  84,  12); /* color(108,  60,   0);*/
+    this.fill_terr_gras = color(  0, 156,   0);       
+    this.fill_terr_sand = color(255, 216, 144); /* color(180, 144,  12);*/ /* color(255, 216,  96);*/
+    this.fill_terr_watr = color( 60, 120, 180); /* color(  0, 120, 180) */
+
+    //> SP-Map Settings
+    this.fill_SP_occ = color(216,168,240,128); 
+    this.fill_SP_vac = color(0,0); 
+
+    //> Text-Related Settings
     this.fill_text = color(0);   // text labels
     this.size_text = 20;         // font size    
+
+
+    //> Good 'Ol 'Error Purple'
+    this.fill_ERROR   = color(255,0,255);
   } // Ends Function initColorPallete
 
   initTileMap(){
-    /* STUB TODO - Grab via P5JS Gridwalker Analog */
-  }
+    for(let r=0; r<this.cellsTall; r++){
+      this.map_tile[r]=[]; 
+      for(let c=0; c<this.cellsWide; c++){
+        this.map_tile[r][c]=TileType.dirt;
+      }
+    }    
+  } // Ends Function initTileMap
 
   initSPMap(){
     for (let r=0; r<this.cellsTall; r++) {
@@ -89,17 +114,115 @@ class GameMap{
     /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
   }
 
+
+//######################################################################
+//>>> Map Load and [toString] Save Functions
+//######################################################################
+
+
   loadMap(mapArr=null){
-    /* STUB TODO - Grab via P5JS Gridwalker Analog */
+    if(mapArr){
+      for(let r=0; r<this.cellsTall; r++){
+        for(let c=0; c<this.cellsWide; c++){
+          switch(mapArr[r][c]){
+            case 'r': this.map_tile[r][c] = TileType.road; break;
+            case 'p': this.map_tile[r][c] = TileType.pave; break;
+            case 'd': this.map_tile[r][c] = TileType.dirt; break;            
+            case 'g': this.map_tile[r][c] = TileType.gras; break;
+            case 's': this.map_tile[r][c] = TileType.sand; break;            
+            case 'w': this.map_tile[r][c] = TileType.watr; break;
+            default : this.map_tile[r][c] = TileType.ERROR; break;
+          }
+        }
+      }   
+    }
+    return this; // for function chaining 
+  } // Ends Function loadMap
+
+  mapToString(nLine="\n"){
+    let retStr = "map = [" + nLine;
+    for (var r=0; r<this.cellsTall; r++){
+      retStr += "[";
+      for (var c=0; c<this.cellsWide; c++){
+        retStr+="\'";
+        switch(this.map_tile[r][c]){
+            case CellType.road : retStr+='r'; break;
+            case CellType.pave : retStr+='p'; break;
+            case CellType.dirt : retStr+='d'; break;
+            case CellType.gras : retStr+='g'; break;
+            case CellType.sand : retStr+='s'; break;
+            case CellType.watr : retStr+='w'; break;
+            default :            retStr+='?'; break;
+        }
+        retStr+="\'";
+        if(c<this.cellsWide-1){retStr+=',';}
+      }
+      retStr += "],"+nLine;
+    }
+    retStr += "];";
+    return retStr;
+  } // Ends Function mapToString
+
+
+//######################################################################
+//>>> SP Map Specific Functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//######################################################################
+
+  //>>> These get ANYTHING posting itself to SP (i.e. [bodies, vehicles, bldgs])
+  getObjsInCells(cellList){
+    // NAT - Can fill these NOW via SpatialPartitionDemo [BG-3]
+  }
+  getObjsAtCell(cell){
+    // NAT - Can fill these NOW via SpatialPartitionDemo [BG-3]
   }
 
-  //====================================================================
-  //>>> Per-Frame and State Update Functions
-  //====================================================================
+  //>>> These get UNITS xor BLDGS ONLY (i.e. [bodies, vehicles] xor [bldgs])
+  // Note: STUBS for now, as no IMMEDIATE need and still need to set other stuff up first...
+  getUnitsInCells(cellList){return null;}
+  getUnitsAtCell(cell){return null;}
+  getBldgsInCells(cellList){return null;}
+  getBldgAtCell(cell){return null;}
+
+  // Vacant Cell <=> SP reports NOTHING at the cell
+  isCellVacant(v1,v2){
+    switch(arguments.length){
+      case 1: return this.isCellVacant(v1[0],v1[1]);
+      case 2: return this.cellInBounds(v1,v2) && (this.map_SP[v1][v2].size==0);
+    }
+  } // Ends Function isCellVacant
+
+  // Self-Evidently the negation of 'isCellVacant'
+  isCellOccupied(v1,v2){
+    switch(arguments.length){
+      case 1: return !this.isCellVacant(v1);
+      case 2: return !this.isCellVacant(v1[0],v1[1]);
+    }
+  } // Ends Function isCellOccupied
+
+  // QAD Desc: Given TL row/col and cells wide/tall, are all encompassing cells [VACANT]?
+  // Improvement NOTE/TODO: No need for 'qCell', as 'isCellOccupied' now accepts (r,c) input
+  canBuildBldg(ri,ci,w,t){
+    let qCell = [-1,-1]; // query cell [row,col]
+    for(let r=0; r<t; r++){
+      for(let c=0; c<w; c++){
+        qCell[0]=ri+r; qCell[1]=ci+c;
+        if(this.isCellOccupied(qCell)){return false;}
+      }    
+    }
+    return true;
+  } // Ends Function canBuildBldg
+
+  // Naive i.e. finds via searching top-left to bottom-right
+  findVacantCell(){
+    for (let r=0; r<this.cellsTall; r++) {
+      for (let c=0; c<this.cellsWide; c++) {
+        if(this.isCellVacant(r,c)){return [r,c];}
+      }
+    }
+    return null;
+  } // Ends Function findVacantCell
 
   // EVERYTHING uses this (i.e. [bodies, vehicles, bldgs]) <-- well maybe NOT bldgs, TBD...
-
-
   updatePos(obj){
     //>>> Compute cell coords based on current position
     let newCoords = this.posToCoord(obj.pos);
@@ -136,6 +259,41 @@ class GameMap{
   } // Ends Function removePos
 
 
+//######################################################################
+//>>> [Terrain] Tile Map Specific Functions
+//######################################################################
+
+
+  // A/O 1/1, cost of terrain cell is its 'enum' value
+  getCostAt(row, col){
+    this.getValueAt(row,col,'tile');
+  } // Ends Function getCostAt
+
+  // NOT handling invalid vals to KISS, map viz and/or cell val will let you know
+  setValueAt(r,c,val){
+    if(!this.cellInBounds(cell)){return;}
+    this.map_tile[r][c] = val;
+  } // Ends Function setValueAt
+
+  setAllCellsTo(layer,val){
+     for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        this.setValueAt(r,c,val);
+      }
+    }   
+  } // Ends Function setAllCellsTo
+
+  // NOT [YET] IMPLEMENTED, but should utilize 'BFS method' when you do so!
+  floodFillAt(cell,val){
+    /* STUB TODO - pending getting tilemap layer set up (via P5JS-Gridwalker or otherwise) */
+  }
+
+
+//######################################################################
+//>>> Scent and Sound Map Specific Functions
+//######################################################################
+
+
   /*--------------------------------------------------------------------
   |>>> Function advanceScentAndSound 
   +---------------------------------------------------------------------
@@ -151,9 +309,22 @@ class GameMap{
     /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
   }
 
-  //====================================================================
-  //>>> Toggle Functions
-  //====================================================================
+  // currently: updatePos calls whenever human unit leaves current cell
+  leaveScent(oldCoord,newCoord,scentVal){
+    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
+  }
+
+  // called by [handler of] event producing an 'observable' sound (e.g. grenade explodes)
+  makeASound(sPos, sRad){
+    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
+  }
+
+
+//######################################################################
+//>>> Toggle Functions
+//######################################################################
+
+
   toggleGrid()           {this.showGrid     = !this.showGrid;}
   toggleCoords()         {this.showCoords   = !this.showCoords;}
   toggleTileMap()        {this.showTileMap  = !this.showTileMap;}
@@ -166,94 +337,22 @@ class GameMap{
   toggleScentMapVizMode(){this.scentMapMode = (this.scentMapMode==0)?1:0;}
   toggleSoundMapVizMode(){this.soundMapMode = (this.soundMapMode==0)?1:0;}
 
-  //====================================================================
-  //>>> Setters
-  //====================================================================
 
-  setValueAt(cell,layer,val){
-    /* TODO: switch on all layers, ez-but-busy work*/
-  }
+//######################################################################
+//>>> General Getter Functions
+//######################################################################
 
-  setAllCellsTo(layer,val){
-    /* TODO: switch on all layers, ez-but-busy work*/
-  }
-
-  // basically: calls 'this.setAllCellsTo(layer, <default value WRT layer>)'
-  resetCellVals(layer){
-    /* TODO: switch on all layers, and once all cell value 'enums' are in; i.e. ez-but-busy work*/
-  }
-
-  // NOT [YET] IMPLEMENTED, but should utilize 'BFS method' when you do so!
-  floodFillAt(cell,val){
-    /* STUB TODO - pending getting tilemap layer set up (via P5JS-Gridwalker or otherwise) */
-  }
-
-  // currently: updatePos calls whenever human unit leaves current cell
-  leaveScent(oldCoord,newCoord,scentVal){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
-
-  // called by [handler of] event producing an 'observable' sound (e.g. grenade explodes)
-  makeASound(sPos, sRad){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
-
-  //====================================================================
-  //>>> Getter Functions
-  //====================================================================
-
-  getValueAt(cell,layer){
-    /* TODO: switch on all layers, ez-but-busy work*/
-  }
-
-  getCostAt(row, col){
-    /* STUB TODO - Grab via P5JS Gridwalker Analog */
-  }
-
-  //>>> These get ANYTHING posting itself to SP (i.e. [bodies, vehicles, bldgs])
-  getObjsInCells(cellList){
-    // NAT - Can fill these NOW via SpatialPartitionDemo [BG-3]
-  }
-  getObjsAtCell(cell){
-    // NAT - Can fill these NOW via SpatialPartitionDemo [BG-3]
-  }
-
-  //>>> These get UNITS xor BLDGS ONLY (i.e. [bodies, vehicles] xor [bldgs])
-  // Note: STUBS for now, as no IMMEDIATE need and still need to set other stuff up first...
-  getUnitsInCells(cellList){return null;}
-  getUnitsAtCell(cell){return null;}
-  getBldgsInCells(cellList){return null;}
-  getBldgAtCell(cell){return null;}
-
-  // Vacant Cell <=> SP reports NOTHING at the cell
-  isCellVacant(v1,v2){
-    switch(arguments.length){
-      case 1: return this.isCellVacant(v1[0],v1[1]);
-      case 2: return this.cellInBounds(v1,v2) && (this.map_SP[v1][v2].size==0);
+  getValueAt(layer,v1,v2){
+    if(arguments.length==2){return this.getValueAt(layer,v1[0],v1[1]);}
+    if(!this.cellInBounds(v1,v2)){return;}
+    switch(layer.toLowerCase()){
+      case 'tile':  return this.map_tile[r][c];
+      case 'sp':    return this.map_SP[r][c];
+      case 'scent': return this.map_scent[r][c];
+      case 'sound': return this.map_scent[r][c];
+      default : console.log("invalid input for parm 'layer' => ["+layer+"]"); return -1;
     }
-  } // Ends Function isCellVacant
-
-  // Self-Evidently the negation of 'isCellVacant'
-  isCellOccupied(v1,v2){
-    switch(arguments.length){
-      case 1: return !this.isCellVacant(v1);
-      case 2: return !this.isCellVacant(v1[0],v1[1]);
-    }
-  } // Ends Function isCellOccupied
-
-  canBuildBldg(cellTL,w,t){
-    /* STUB TODO - Grab via P5JS Gridwalker Analog */    
-  } // where [cellTL]=> top-left cell and [w,t]=> cells wide/tall of building 
-
-  // Naive i.e. finds via searching top-left to bottom-right
-  findVacantCell(){
-    for (let r=0; r<this.cellsTall; r++) {
-      for (let c=0; c<this.cellsWide; c++) {
-        if(this.isCellVacant(r,c)){return [r,c];}
-      }
-    }
-    return null;
-  } // Ends Function findVacantCell
+  } // Ends Function getValueAt
 
   posToCoord(pos){
     return [floor(pos.y/this.cellSize),floor(pos.x/this.cellSize)];
@@ -279,17 +378,9 @@ class GameMap{
   } // Ends Function cellInBounds
 
 
-  //====================================================================
-  //>>> String/Console Output Functions
-  //====================================================================
-  mapToString(nLine="\n"){
-    /* STUB TODO - Grab via P5JS Gridwalker Analog */
-  }
-
-
-  //====================================================================
-  //>>> Render Functions
-  //====================================================================
+//######################################################################
+//>>> Render Functions
+//######################################################################
   render(){
     // only non-debug call alongside 'renderGrid' | must be first call!
     if(this.showTileMap){this.renderTileMap();}
@@ -304,8 +395,8 @@ class GameMap{
 
   renderGrid(){
     stroke(this.strk_grid); strokeWeight(this.sWgt_grid);
-    for(let i=0; i<=this.cellsTall; i++){line(0,this.cellSize*i,width,this.cellSize*i);}
-    for(let i=0; i<=this.cellsWide; i++){line(this.cellSize*i,0,this.cellSize*i,height);}
+    for(let i=0; i<=this.cellsTall; i++){line(0,this.cellSize*i,this.areaWide,this.cellSize*i);}
+    for(let i=0; i<=this.cellsWide; i++){line(this.cellSize*i,0,this.cellSize*i,this.areaTall);}
   } // Ends Function renderGrid
 
   renderCoords(){
@@ -321,16 +412,15 @@ class GameMap{
     noStroke();
     for(let r=0; r<this.cellsTall; r++){
       for(let c=0; c<this.cellsWide; c++){
-        /* >>> TODO: Grab via P5JS Gridwalker Analog
-        switch(this.tileMap[r][c]){
-          case GameMap.CellType.border:    fill(this.col_cellBorder); break;
-          case GameMap.CellType.mapDecor:  fill(this.col_cellMapDecor); break;
-          case GameMap.CellType.enemyPath: fill(this.col_cellEnemyPath); break;
-          case GameMap.CellType.buildable: fill(this.col_cellBuildable); break;
-          default: fill(this.col_error);
+        switch(this.map_tile[r][c]){
+            case TileType.road: fill(this.fill_terr_road); break;
+            case TileType.pave: fill(this.fill_terr_pave); break;
+            case TileType.dirt: fill(this.fill_terr_dirt); break;            
+            case TileType.gras: fill(this.fill_terr_gras); break;
+            case TileType.sand: fill(this.fill_terr_sand); break;            
+            case TileType.watr: fill(this.fill_terr_watr); break;
+            default :           fill(this.fill_ERROR);
         }
-        */
-        fill(255,255,0);
         rect(c*this.cellSize,r*this.cellSize,this.cellSize,this.cellSize);
       }
     }
