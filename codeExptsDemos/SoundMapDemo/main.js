@@ -1,6 +1,3 @@
-
-
-
 var demoMap;
 var curSoundRad = 87;
 var soundAddVal = 80; // current score added to cell when it hears sound
@@ -13,30 +10,17 @@ function setup(){
 
 function draw(){
   background(240);
-
   autoToot();
-
-  demoMap.update();
-
+  demoMap.updateCells();
   demoMap.render();
-
   drawRadDiscWRTMouse();
-
   drawCurSoundRad();
-
   drawFPS();
   drawCanvasBorder();
 }
 
-function mousePressed(){
-  demoMap.makeASound(mousePtToVec(),curSoundRad);
-}
-
-function mouseWheel(event) {
-  let cofactor = ((keyIsPressed===true && keyCode === SHIFT) ? 8 : 2);
-  curSoundRad-=Math.sign(event.delta)*cofactor; // subtract effects inverted wheel
-}
-
+function mousePressed(){demoMap.makeASound(mousePtToVec(),curSoundRad);}
+function mouseWheel(event){curSoundRad-=Math.sign(event.delta)*((keyIsPressed===true && keyCode === SHIFT) ? 8 : 2);}
 
 //######################################################################
 //>>> OTHER / 'UNIQUE-TO-THIS-PROJECT' FUNCTIONS

@@ -1,4 +1,14 @@
+//######################################################################
+//>>> GLOBAL VARIABLES ([CONFIG] VALUES) AND DATA STRUCTURE DECLARATIONS
+//######################################################################
 
+//>>> Config Values (Note: I might eventually use a 'Config' Dict as with Spatial Partition Demo)
+var soundDecayFac = 0.95;
+var soundAddVal   = 80;
+var scentDecayFac = 0.98;
+var scentAddVal   = 20; // will eventually be specific to the unit, but KISS
+
+//>>> Data Structure Declarations
 
 var myMap;
 var myGO;

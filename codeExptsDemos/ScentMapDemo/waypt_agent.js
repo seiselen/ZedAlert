@@ -104,7 +104,7 @@ class WayptAgent{
 
       // At current waypoint (exactly xor clamped overshoot, and also means I never 'lose a frame' of movement)
       if(p5.Vector.dist(this.pos,newPos) == p5.Vector.dist(this.pos,this.curPath[this.curWaypt]) ){ 
-        this.map.updatePos(this.cellPath[this.curWaypt],this.cellPath[(this.curWaypt+1)%this.curPath.length]);
+        this.map.leaveScent(this.cellPath[this.curWaypt],this.cellPath[(this.curWaypt+1)%this.curPath.length]);
         this.curWaypt++;
       }
       this.pos = newPos;

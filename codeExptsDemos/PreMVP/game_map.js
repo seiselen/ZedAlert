@@ -13,6 +13,12 @@
 |########## Zed Alert concept and code[base] © Steven Eiselen ##########
 +=====================================================================*/
 
+/*======================================================================
+|>>> 'Enum' TileType
++-----------------------------------------------------------------------
+| Description: TODO-TBD => Will be adding [more] info once the pathfind
+|              system is installed and working within the codebase!
++=====================================================================*/
 var TileType = {
   road:     1,
   pave:     2,
@@ -21,7 +27,33 @@ var TileType = {
   sand:    64,
   watr:  1024,
   ERROR: 9999
-}
+}; // Ends Enum TileType
+
+
+/*======================================================================
+|>>> 'Enum' Direction
++-----------------------------------------------------------------------
+| Description: Functions as an enum representing the direction of a map
+|              cell WRT another map cell (WRT Moore Neighborhood space).
+|              Currently used with the Scent and Sound Map [Layers] to
+|              inform of the direction that the most recent human unit
+|              came from, xor the direction where some sound came from.
+|              Also contains an array of UNICODE glyphs corresponding to
+|              the values, used for [debug] display of map data.
+| Data Schema: Values correspond to clockwise traversal of cell's Moore
+|              Neighborhood starting at [Top-Right]/[Northeast], whereby
+|              the [Center]/[Origin] has a value of zero (0) as follows:
+|
+|                      |NW  N  NE|    |RL  T  TR|    |7 8 1|
+|                      | W ORG  E| => | L CTR  R| => |6 0 2|
+|                      |SW  S  SE|    |BL  B  BR|    |5 4 3|
++=====================================================================*/
+var Direction = {
+  'O':0, 'ORG':0, 'NE':1, 'E':2, 'SE':3, 'S':4, 'SW':5, 'W':6, 'NW':7, 'N':8, 
+  'C':0, 'CTR':0, 'TR':1, 'R':2, 'BR':3, 'B':4, 'BL':5, 'L':6, 'TL':7, 'T':8,
+  'X':9, // <== None/Expired/Unknown or otherwise Default value
+  glyph : ['•','⬈','⮕','⬊','⬇','⬋','⬅','⬉','⬆','∅']
+}; // Ends Enum Direction
 
 
 class GameMap{
@@ -107,12 +139,22 @@ class GameMap{
   } // Ends Function initSPMap
 
   initScentMap(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
+    for (let r = 0; r < this.cellsTall; r++) {
+      this.map_scent[r]=[];
+      for (let c = 0; c < this.cellsWide; c++) {
+        this.map_scent[r].push([0,Direction.X]);
+      }
+    }
+  } // Ends Function initScentMap
 
   initSoundMap(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
+    for (let r = 0; r < this.cellsTall; r++) {
+      this.map_sound[r]=[];
+      for (let c = 0; c < this.cellsWide; c++) {
+        this.map_sound[r].push([0,Direction.X]);
+      }
+    }
+  } // Ends Function initSoundMap
 
 
 //######################################################################
@@ -283,11 +325,68 @@ class GameMap{
     }   
   } // Ends Function setAllCellsTo
 
-  // NOT [YET] IMPLEMENTED, but should utilize 'BFS method' when you do so!
-  floodFillAt(cell,val){
-    /* STUB TODO - pending getting tilemap layer set up (via P5JS-Gridwalker or otherwise) */
-  }
 
+  /*--------------------------------------------------------------------
+  |>>> Function floodFill 
+  +---------------------------------------------------------------------
+  | Description: Performs a 'flood fill' on the region indicated by the
+  |              seed row and col with the new tile type. That is, given
+  |              the tile type of the input cell, the region defined as
+  |              all contiguous cells thereto of the same tile type will
+  |              be changed to the new tile type; including itself. This
+  |              is implemented via a Breadth-First Search (BFS).
+  | Source:      This function was ported from the Genesis-I project '2D
+  |              Caves via Cellular Automata'; which itself derives from
+  |              a similar BFS approach described by Sebastian Lague for
+  |              his Unity3D Procedural CA Caves project. 
+  | Side Note:   While I knew that elements of TD-P5JS, StAgE/Sandkings,
+  |              other Broadgate projects, and even the older attempts
+  |              at implementing ZAC or a peripheral thereof would find
+  |              their way to this codebase, I did NOT expect code from
+  |              Project Genesis to find its way over here (at least not
+  |              unless/until I implemented a robust PCG map generator,
+  |              but that's not even planned until the hypothetical i.e.
+  |              may-never-happen full commercial version of Zed Alert!) 
+  +-------------------------------------------------------------------*/
+  floodFill(seedRow, seedCol, newVal){
+    if(!this.cellInBounds(seedRow,seedCol)){return;}
+
+    let curVal    = this.map_tile[seedRow][seedCol];
+    let temp      = null;
+    let openSet   = [];
+    let closedSet = new Map();
+
+    openSet.push([seedRow,seedCol]);
+    closedSet.set( ""+seedRow+","+seedCol, 1);
+  
+    let curSec = 0;
+    let maxSec = this.cellsWide*this.cellsTall;
+
+    while(curSec<maxSec && openSet.length > 0){
+      temp = openSet.shift();
+    
+      this.map_tile[temp[0]][temp[1]] = newVal;
+    
+      for(let adjR = temp[0]-1; adjR <= temp[0]+1; adjR++){
+        for(let adjC = temp[1]-1; adjC <= temp[1]+1; adjC++){
+          console.log(adjR+","+adjC);
+          // don't know why 2nd conditional constrains WRT to Von Neuman neighborhood, but okelie dokelie...
+          if(this.cellInBounds(adjR,adjC) && (adjR==temp[0] || adjC==temp[1])){
+            // Final conditional makes sure all prospective filled tiles need to match original seed tile type
+            if(!closedSet.get(""+adjR+","+adjC) && this.map_tile[adjR][adjC] == curVal){
+              closedSet.set(""+adjR+","+adjC, 1);
+              openSet.push([adjR,adjC]);    
+            }          
+          }   
+        }
+      }
+      curSec++;
+    }  
+    console.log("SEC = " + curSec + " MAX = " + maxSec);
+    // might be overkill, but #yolo
+    openSet.length = 0;
+    closedSet.clear(); 
+  } // Ends Function floodFill
 
 //######################################################################
 //>>> Scent and Sound Map Specific Functions
@@ -300,24 +399,59 @@ class GameMap{
   | Description: Realizes 'fading' of scent and sound values over time
   |              WRT each cell's entry in their respective map layers.
   +---------------------------------------------------------------------
+  |> TODO: Merge them or partition into resp. functions per 'Uncle Bobs
+  |        1 Behavior/Function' Principle?
   |> Optimization Possibility (STRICTLY AS-NEEDED): 
   |   o I could stagger/offset these: whereby scent and sound maps only
   |     update every other frame WRT each other; half the cells update
   |     every other frame; or some combination of both. 
   +-------------------------------------------------------------------*/
   advanceScentAndSound(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
+    //>>> UPDATES SOUND MAP
+    for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        if(this.map_sound[r][c][0] > 0.25){this.map_sound[r][c][0] *= soundDecayFac;}
+        if(this.map_sound[r][c][0] < 1)   {this.map_sound[r][c][1]  = Direction.X;}
+      }
+    }
+    //>>> UPDATES SCENT MAP 
+    for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        if(this.map_scent[r][c][0] > 0.25){this.map_scent[r][c][0] *= scentDecayFac;}
+        if(this.map_scent[r][c][0] < 1)   {this.map_scent[r][c][1]  = Direction.X;}
+      }
+    }
+  } // Ends Function advanceScentAndSound
 
-  // currently: updatePos calls whenever human unit leaves current cell
-  leaveScent(oldCoord,newCoord,scentVal){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
+  // current plan for this: updatePos calls whenever human unit leaves its current cell
+  leaveScent(oldC,newC){
+    let diffR = newC[0]-oldC[0];
+    let diffC = newC[1]-oldC[1];
+    this.map_scent[oldC[0]][oldC[1]][1]  = Direction[((diffR|diffC) == 0) ? 'C' : ((diffR==0) ? '' : (diffR<0) ? 'T' : 'B')+((diffC==0) ? '' : (diffC<0) ? 'L' : 'R')];
+    this.map_scent[oldC[0]][oldC[1]][0] += scentAddVal;
+  } // Ends Function leaveScent
 
   // called by [handler of] event producing an 'observable' sound (e.g. grenade explodes)
   makeASound(sPos, sRad){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
-  }
+    let coord   = this.posToCoord(sPos);
+    let sMpt    = this.posToMidpt(sPos);
+    let cMpt    = vec2();
+    let cellRad = floor(sRad/this.cellSize);
+    let sRadSqd = sRad*sRad;
+    let diffR   = -1;
+    let diffC   = -1;
+    for(let r=coord[0]-cellRad; r<=coord[0]+cellRad; r++){
+      for(let c=coord[1]-cellRad; c<=coord[1]+cellRad; c++){
+        cMpt.set(this.coordToPos(r,c));
+        if(this.cellInBounds(r,c) && distSq(sMpt,cMpt) <= sRadSqd){
+          diffR = coord[0]-r;
+          diffC = coord[1]-c;
+          this.map_sound[r][c][1] = Direction[((diffR|diffC) == 0) ? 'C' : ((diffR==0) ? '' : (diffR<0) ? 'T' : 'B')+((diffC==0) ? '' : (diffC<0) ? 'L' : 'R')];
+          this.map_sound[r][c][0] += soundAddVal;
+        }
+      }
+    }
+  } // Ends Function makeASound
 
 
 //######################################################################
@@ -362,9 +496,13 @@ class GameMap{
     return this.coordToPos(this.posToCoord(pos));
   } // Ends Function posToMidpt
 
-  coordToMidpt(rc){
-    return vec2((rc[1]*this.cellSize)+this.cellHalf, (rc[0]*this.cellSize)+this.cellHalf);
-  } // Ends Function coordToMidpt
+  // more appropriate name would be 'coordToMidPt' but legacy so KISS
+  coordToPos(v1,v2){
+    switch(arguments.length){
+      case 1: return vec2((v1[1]*this.cellSize)+this.cellHalf, (v1[0]*this.cellSize)+this.cellHalf);
+      case 2: return vec2((v2*this.cellSize)+this.cellHalf, (v1*this.cellSize)+this.cellHalf);
+    }
+  } // Ends Function coordToPos
 
   posInBounds(pos){
     return (pos.x>=0 && pos.y>=0 && pos.x<this.areaWide && pos.y<this.areaTall);
@@ -427,15 +565,26 @@ class GameMap{
   } // Ends Function renderTileMap
 
   renderSPMap(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
+    /* STUB TODO - simply need to implement this, not really pending on anything that I'm aware of... */
   } // Ends Function renderSPMap
 
   renderScentMap(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
+    fill(this.fill_text); noStroke(); textAlign(CENTER,CENTER); textSize(this.size_text);
+    for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        text(((this.scentMapMode==0) ? this.map_scent[r][c][0] : Direction.glyph[this.map_scent[r][c][1]]),(c*this.cellSize)+this.cellHalf, (r*this.cellSize)+this.cellHalf);
+      }
+    }
   } // Ends Function renderScentMap
 
   renderSoundMap(){
-    /* STUB TODO - pending effort to see if i can reduce scent/sound map data to Array2 */
+    fill(this.fill_text); noStroke(); textAlign(CENTER,CENTER); textSize(this.size_text);
+    for(let r=0; r<this.cellsTall; r++){
+      for(let c=0; c<this.cellsWide; c++){
+        text(((this.soundMapMode==0) ? this.map_sound[r][c][0] : Direction.glyph[this.map_sound[r][c][1]]),(c*this.cellSize)+this.cellHalf, (r*this.cellSize)+this.cellHalf);
+      }
+    }
   } // Ends Function renderSoundMap
+
 
 } // Ends Class GameMap

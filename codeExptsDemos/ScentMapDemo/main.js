@@ -15,8 +15,7 @@ function setup(){
 function draw(){
   //>>> UPDATE METHODS
   agents.forEach((a)=>a.update());
-  demoMap.update();
-
+  demoMap.updateCells();
   //>>> RENDER METHODS
   background(240);  
   demoMap.renderHeatmap();
@@ -24,7 +23,6 @@ function draw(){
   demoMap.renderGrid();  
   demoMap.renderDirGlyphs();  
   agents.forEach((a)=>a.renderBody());
-
   drawFPS();
   drawCanvasBorder();
 }
