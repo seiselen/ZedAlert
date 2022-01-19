@@ -1,19 +1,4 @@
 /*======================================================================
-|>>> Class GameMap                                     [ZED ALERT - MVP]
-+-----------------------------------+-----------------------------------
-| Author:    Steven Eiselen         | Language:  JavaScript 
-| Project:   Zed Alert a.k.a. ZAC   | Library:   P5JS (p5js.org/)
-+-----------------------------------+-----------------------------------
-| Description: TODO
-+-----------------------------------------------------------------------
-| [AS-YOU-BUILD] Implementation Notes:
-|  > WRT StAgE: [Body Unit] SteeringMotor components will [now] refer to
-|    HERE for flowfields to follow; i.e. for the scent and sound layers.
-+-----------------------------------------------------------------------
-|########## Zed Alert concept and code[base] © Steven Eiselen ##########
-+=====================================================================*/
-
-/*======================================================================
 |>>> 'Enum' TileType
 +-----------------------------------------------------------------------
 | Description: TODO-TBD => Will be adding [more] info once the pathfind
@@ -56,6 +41,20 @@ var Direction = {
 }; // Ends Enum Direction
 
 
+/*======================================================================
+|>>> Class GameMap                                     [ZED ALERT - MVP]
++-----------------------------------+-----------------------------------
+| Author:    Steven Eiselen         | Language:  JavaScript 
+| Project:   Zed Alert a.k.a. ZAC   | Library:   P5JS (p5js.org/)
++-----------------------------------+-----------------------------------
+| Description: TODO
++-----------------------------------------------------------------------
+| [AS-YOU-BUILD] Implementation Notes:
+|  > WRT StAgE: [Body Unit] SteeringMotor components will [now] refer to
+|    HERE for flowfields to follow; i.e. for the scent and sound layers.
++-----------------------------------------------------------------------
+|########## Zed Alert concept and code[base] © Steven Eiselen ##########
++=====================================================================*/
 class GameMap{
   constructor(cT,cW,cS,mapInfo){
     //> General/Shared Map Info
@@ -100,11 +99,11 @@ class GameMap{
     this.sWgt_grid = 2; 
 
     //> Tile-Map Settings
-    this.fill_terr_road = color(120, 120, 120); /* color( 82,  82,  82);*/
-    this.fill_terr_pave = color(162, 162, 162);    
-    this.fill_terr_dirt = color(144,  84,  12); /* color(108,  60,   0);*/
-    this.fill_terr_gras = color(  0, 156,   0);       
-    this.fill_terr_sand = color(255, 216, 144); /* color(180, 144,  12);*/ /* color(255, 216,  96);*/
+    this.fill_terr_road = color( 84,  84,  84);
+    this.fill_terr_pave = color(168, 168, 168);    
+    this.fill_terr_dirt = color(144,  84,  12);
+    this.fill_terr_gras = color(  0, 144,  24);       
+    this.fill_terr_sand = color(255, 216, 144); /* color(255, 216,  96);*/
     this.fill_terr_watr = color( 60, 120, 180); /* color(  0, 120, 180) */
 
     //> SP-Map Settings
