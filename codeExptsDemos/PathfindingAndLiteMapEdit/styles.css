@@ -1,0 +1,33 @@
+body {color: white; font-family:verdana;}
+table {margin-left: auto; margin-right: auto; border-collapse: collapse; color: white;}
+td {vertical-align: middle; padding-top: 4px; padding-bottom: 4px; border: 1px solid white;}
+h1 {user-select: none; margin-block-start: 0px; margin-block-end: 0px;}
+#h1_head  {background: rgb(60,60,60); color: #FFFFFF; padding-left: 4px; max-width: 1288px;}
+#pane_viz {width: 1024px;}
+#pane_ui  {width: 268px;}
+#cont_tab {width: 1292px; height: 768px; display: table; table-layout: fixed;}
+#cont_row {display: table-row;}
+.cont_col {display: table-cell; background: rgb(60,60,60); vertical-align: top; overflow: hidden; height: 768px;}
+.lab_head {user-select: none; font-size: 20px; min-width: 256px;text-align: center; padding-top: 4px; padding-bottom: 4px; padding-left: 0px; padding-right: 0px; background: rgb(0,36,120);}
+.lab_desc {user-select: none; font-size: 16px; min-width: 84px; padding-left: 2px; padding-right: 2px;}
+.lab_cVal {user-select: none; font-size: 16px; min-width: 102px; text-align: center; padding-left: 0px; padding-right: 0px; background: #181818FF;}
+.lab_rad  {user-select: none; font-size: 18px; min-width: 40px; text-align: center; background: #181818FF;}
+.lab_cBox {user-select: none; min-width: 40px; text-align: center; background: #181818FF;}   
+.inp_rad  {display: block; font-size: 32px; height: 0.5em; width: 0.5em; margin: auto;}
+.inp_but {font-size: 15px; font-weight: bold; padding-top: 4px; padding-bottom: 4px;}
+.lab_desc button:nth-child(1):hover {color: rgb(0,120,0);}
+.lab_desc button:nth-child(2):hover {color: rgb(180,0,0);}
+.lab_desc button:nth-child(1):active {color: white; background-color: rgb(0,240,0);}
+.lab_desc button:nth-child(2):active {color: white; background-color: rgb(240,0,0);}
+.inp_but2 {min-width: 124px; padding: 4px; font-size: 15px; font-weight: bold;}
+
+/*> Sources: <w3schools.com/howto/howto_css_switch.asp> and <stackoverflow.com/questions/39846282/how-to-add-the-text-on-and-off-to-toggle-button> */
+.switch {position: relative; display: inline-block; width: 90px; height: 24px;}
+.switch input { opacity: 0; width: 0; height: 0;}
+.slider {position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ca2222; -webkit-transition: .2s; transition: .2s; border-radius: 6px;}
+.slider:before {position: absolute; content: ""; height: 18px; width: 32px; left: 1px; right: 1px; bottom: 3px; background-color: white; transition: 0.2s; border-radius: 6px;}
+.slider:after {content:'OFF'; color: white; display: block; position: absolute; transform: translate(-50%,-50%); top: 50%; left: 50%; font-size: 10px;}
+input:checked + .slider {background-color: #2196F3;}
+input:focus + .slider {box-shadow: 0 0 1px #2196F3;}
+input:checked + .slider:before { -webkit-transform: translateX(55px); -ms-transform: translateX(55px); transform: translateX(55px);}
+input:checked + .slider:after {content:'ON';}

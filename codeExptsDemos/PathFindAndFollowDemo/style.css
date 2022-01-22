@@ -1,0 +1,19 @@
+body{font-family: monospace; font-weight: bold; font-size: 16px;}
+button{font-family: monospace; font-weight: bold; font-size: 16px;}
+td{padding-right: 8px; padding-left: 8px; border: 1px dotted rgb(144,204,228);}
+
+.noTextSel {user-select: none;}
+.optHeader {user-select: none; font-size: 20px; text-align: center; background-color: rgb(144,204,228,0.5);}
+.bigRadButt {min-width: 36px; border: 0px; margin: 0px; width: 100%; height: 2em;} /* lol "She has a Big Rad Butt", though it's shorthand for: 'Big Radio Button' */
+
+
+/*> Sources: <w3schools.com/howto/howto_css_switch.asp> and <stackoverflow.com/questions/39846282/how-to-add-the-text-on-and-off-to-toggle-button> */
+.switch {position: relative; display: inline-block; width: 90px; height: 24px;}
+.switch input { opacity: 0; width: 0; height: 0;}
+.slider {position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ca2222; -webkit-transition: .2s; transition: .2s; border-radius: 6px;}
+.slider:before {position: absolute; content: ""; height: 18px; width: 32px; left: 1px; right: 1px; bottom: 3px; background-color: white; transition: 0.2s; border-radius: 6px;}
+.slider:after {content:'OFF'; color: white; display: block; position: absolute; transform: translate(-50%,-50%); top: 50%; left: 50%; font-size: 10px;}
+input:checked + .slider {background-color: #2196F3;}
+input:focus + .slider {box-shadow: 0 0 1px #2196F3;}
+input:checked + .slider:before { -webkit-transform: translateX(55px); -ms-transform: translateX(55px); transform: translateX(55px);}
+input:checked + .slider:after {content:'ON';}

@@ -48,11 +48,11 @@ class ScentMap{
   //>>> UPDATE [PER-FRAME] AND EVENT-BASED FUNCTIONS
   //##################################################################
   updateCells(){
-    if(frameCount%16!=0){return;}
+    if(frameCount%4==3){return;}
     for(let r=0; r<this.cellsTall; r++){
       for(let c=0; c<this.cellsWide; c++){
-        if(this.map[r][c].val>0.25){this.map[r][c][0] *= ScentMap.decayFactor;}
-        if(this.map[r][c].val<1){this.map[r][c][1]     = Direction.X;}
+        if(this.map[r][c][0]>0.25){this.map[r][c][0] *= ScentMap.decayFactor;}
+        if(this.map[r][c][0]<1){this.map[r][c][1]     = Direction.X;}
       }
     }    
   } // Ends Function updateCells

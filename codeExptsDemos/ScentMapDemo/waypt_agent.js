@@ -48,6 +48,7 @@ class WayptAgent{
     this.bodyLen  = 24; // Using fixed val of [24] via TD-P5JS as no need for variability
     this.bodyLenH = this.bodyLen/2;
 
+    this.scentDropPeriod = 4; // i.e. drop scent every [x] frames e.g. [x=4] and [FPS=60] => every 1/4 second
     this.leftScent = false; // 'dirty bit' used to ensure scent dropped only ONCE per cell visit!
 
     this.initColorPallete();
@@ -82,11 +83,17 @@ class WayptAgent{
   //###################################################################
   update(){
     this.gotoPath();
+    this.leaveScent();
   } // Ends Function update
 
-  gotoPath(){
-    if(this.curWaypt<this.curPath.length){
+  leaveScent(){
+    if(this.curPath && this.curWaypt<this.curPath.length && frameCount%this.scentDropPeriod==0){
+      this.map.leaveScent(this.cellPath[this.curWaypt],this.cellPath[(this.curWaypt+1)%this.curPath.length]);
+    }
+  }
 
+  gotoPath(){
+    if(this.curPath && this.curWaypt<this.curPath.length){
       // Calculate 'proposed' next move 
       let des = p5.Vector.sub(this.curPath[this.curWaypt],this.pos);
       des.setMag(this.maxSpeed);
@@ -98,15 +105,10 @@ class WayptAgent{
       this.ori.add(oriDelta);
 
       // Clamp position if overshoots waypoint (large velocities unhandled! <= BUT I HAVE SOLUTION IF NEEDED)
-      if(p5.Vector.dist(this.pos,newPos) > p5.Vector.dist(this.pos,this.curPath[this.curWaypt]) ){
-        newPos = this.curPath[this.curWaypt];
-      }
+      if(p5.Vector.dist(this.pos,newPos) > p5.Vector.dist(this.pos,this.curPath[this.curWaypt])){newPos=this.curPath[this.curWaypt];}
 
       // At current waypoint (exactly xor clamped overshoot, and also means I never 'lose a frame' of movement)
-      if(p5.Vector.dist(this.pos,newPos) == p5.Vector.dist(this.pos,this.curPath[this.curWaypt]) ){ 
-        this.map.leaveScent(this.cellPath[this.curWaypt],this.cellPath[(this.curWaypt+1)%this.curPath.length]);
-        this.curWaypt++;
-      }
+      if(p5.Vector.dist(this.pos,newPos) == p5.Vector.dist(this.pos,this.curPath[this.curWaypt])){this.curWaypt++;}
       this.pos = newPos;
     }
     else{
