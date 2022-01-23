@@ -1,8 +1,3 @@
-/*### TTD/NAT ITEMS FOR NEXT-SESSION (AM 10/8/21 ?) ###
-  > Try the 'dampen velocity whenever moving to final cell on waypoint' idea (vis-a-vis TD-P5JS?)
-  > Implement Multiple Agents (I think one of the ZAC Processing3 builds figured out basic/partial collision support?)
-*/
-
 //>>> Canvas/Map GLOBAL Configs
 var worldWide = 1024;
 var worldTall = 768;
@@ -15,7 +10,7 @@ var showOCSet = true;
 
 //>>> Data Structure Declarations
 var gridMap;
-var pathfind;
+var pathFind;
 var agents = [];
 var bldgs  = [];
 var selAgent = null;
@@ -29,7 +24,7 @@ function setup() {
   createCanvas(worldWide,worldTall).parent(select("#pane_viz"));
   document.oncontextmenu = function(){return false;} // handles right click issue
   gridMap  = new GWMap(cellsTall,cellsWide,cellSize);
-  pathfind = new GWPathfinder(gridMap);
+  pathFind = new GWPathfinder(gridMap);
 
   loadMapAgtConfig(map_04,agt_04);
 
@@ -42,7 +37,7 @@ function setup() {
 
 function loadMapAgtConfig(map_cf,agt_cf){
   gridMap.loadMap(map_cf);
-  agt_cf.forEach((rc)=>agents.push(new GWAgent(rc[0],rc[1],gridMap)));
+  agt_cf.forEach((rc)=>agents.push(new GridWalker(rc[0],rc[1],cellSize/2).setToUsingSP()));
 }
 
 
@@ -56,7 +51,7 @@ function draw() {
  
   //>>> RENDER CALLS 
   gridMap.render();
-  if(showOCSet){pathfind.displayBothSets()};  
+  if(showOCSet){pathFind.displayBothSets()};  
   agents.forEach((a)=>a.render());
   bldgs.forEach((b)=>b.render());
 
@@ -105,7 +100,7 @@ function mousePressed(){
     }}
     if(selAgent&&mouseButton=='right'){
       let agtCell = gridMap.cellViaPos(selAgent.pos);
-      selAgent.givePath(pathfind.findPath(agtCell,mapCell));
+      selAgent.givePath(pathFind.findPath(agtCell,mapCell));
       return;
     }
   }

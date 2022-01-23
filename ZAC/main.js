@@ -10,7 +10,7 @@ var scentAddVal   = 20; // will eventually be specific to the unit, but KISS
 
 //>>> Data Structure Declarations
 
-var myMap;
+var gridMap;
 var myGO;
 
 function setup(){
@@ -18,9 +18,9 @@ function setup(){
 
   myGO = new GameObject(vec2(400,400));
 
-  myMap = new GameMap(24,32,32);
-  myMap.initTileMap();
-  myMap.loadMap(map_01);
+  gridMap = new GameMap(24,32,32);
+  gridMap.initTileMap();
+  gridMap.loadMap(map_01);
 
 }
 
@@ -30,7 +30,7 @@ function draw(){
   //myGO.pointAtMouse();
   //myGO.renderAxes();
 
-  myMap.render();
+  gridMap.render();
 
   drawCanvasBorder();
   if(mouseInCanvas()){drawFPS()};

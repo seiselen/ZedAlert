@@ -2,7 +2,8 @@ class GameObject{
   static axisColorF = "#0000FF";
   static axisColorR = "#FF0000";
 
-  constructor(pos=null){
+  constructor(pos=null, ID=-1){
+    this.ID  = ID;
     this.pos = (pos==null) ? vec2() : pos;
     this.ori = vec2(1,0);
   }

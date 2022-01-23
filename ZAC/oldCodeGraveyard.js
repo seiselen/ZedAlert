@@ -46,8 +46,6 @@ function gridWalkAlongPath(){
 } // Ends Function gridWalkAlongPath
 
 
-
-
 /*----------------------------------------------------------------------
 |>>> Function Gridwalker.moveToCurTar
 +-----------------------------------------------------------------------
@@ -109,3 +107,25 @@ function moveToCurTar(){
     this.ori.add(oriDelta);
   }
 } // Ends Function moveToCurTar
+
+
+/*----------------------------------------------------------------------
+|>>> 'Dict' Colors
++-----------------------------------------------------------------------
+|> Overview: Via 'Processing ZAC', keeping as it might be easier and/or
+|            more unified means of predefining and getting colors from a
+|            centrally-defined 'pallete' dict/object <vs> independently
+|            defining within <initGFX> function of every object [class].
++---------------------------------------------------------------------*/
+var Colors = {
+  debug:     "#FF00FF", // color(255,0,255)
+  white:     "#FFFFFF", // color(255,255,255)
+  brown:     "#6C3C00", // color(108,60,0)
+  lightBlue: "#0078B4", // color(0,120,180)
+  mediumGray:"#787878", // color(120,120,120)
+  sand:      "#FFD860", // color(255,216,96)
+  green:     "#009C00", // color(0,156,0)
+  lightGray: "#B4B4B4", // color(180,180,180)
+  orange:    "#FF7800", // color(255,120,0)
+  darkGray:  "#3C3C3C", // color(60,60,60)
+} // Ends Interface Colors

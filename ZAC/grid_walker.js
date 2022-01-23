@@ -1,8 +1,33 @@
+/*======================================================================
+|>>> Class GridWalker                              [ZAC | ZED ALERT MVP]
++-----------------------------------+-----------------------------------
+| Author:    Steven Eiselen         | Language:  JavaScript 
+| Project:   Zed Alert a.k.a. ZAC   | Library:   P5JS (p5js.org/)
++-----------------------------------+-----------------------------------
+| Description: TODO
++-----------------------------------------------------------------------
+| [AS-YOU-BUILD] Implementation Notes:
+|  > (Assigning Refs For [GridMap]/[PathFinder]): I've implemented the
+|    method of their assignment in a way I hope is more convenient and
+|    generalized/robust (i.e. for side/spinoff projects) than annoying.
+|    The constructor will first ask if any input was provided for them.
+|    If not: both are global objects which must be initialized within
+|    'main.js', thus the constructor will then ask if anything exists by
+|    their 'standard name' (i.e. 'gridMap' and 'pathFind' respectively).
+|    Only if that fails will it assign one xor both to [null] (which is 
+|    NOT good!) Ergo, this means that if you follow the standard names: 
+|    all you need to pass in when creating a GridWalker instance is its
+|    initial row, column, and body length! 
++-----------------------------------------------------------------------
+|######## Zed Alert i.e. ZAC Concept/Code[base] © Steven Eiselen #######
++=====================================================================*/
 class GridWalker{
-  constructor(row,col,len,map,ID=undefined){
-    this.ID = ID;   
+  constructor(row,col,len,map,pfd){
+    //> Map/Pathfinder Refs (NOTE: Searches by 'Standard Names' first 
+    this.map   = (map) ? map : (typeof gridMap !== 'undefined' && gridMap)  ? gridMap  : null;
+    this.pFind = (pfd) ? pfd : (typeof pathFind !== 'undefined' && pathFind) ? pathFind : null;
     //> Transform Info
-    this.pos = createVector(col*map.cellSize+(map.cellSize/2),row*map.cellSize+(map.cellSize/2));
+    this.pos = createVector(col*this.map.cellSize+(this.map.cellSize/2),row*this.map.cellSize+(this.map.cellSize/2));
     this.ori = createVector(1,0);
     this.vel = createVector(0,0);
     //> 'Quasi-SA' Settings
@@ -13,10 +38,10 @@ class GridWalker{
     this.bodyHalf = this.bodyLen/2;
     this.bodyThrd = this.bodyLen/3;
     this.bodySxth = this.bodyLen/6;
-    //> Map Ref and [Current] Path State
-    this.map        = map;
+    //> Map/Path [Current] State
     this.curPath    = [];
     this.curWaypt   = 0;
+    this.curCoord   = null; // current map coordinate, as received by map as 'receipt' for updating its SP state
     this.curMoveTar = null; // current 'move-to' target (as P5.Vector) s.t. if not null: agent will move thereto 
     this.curLACell  = null; // current look-ahead cell - used to handle path interruptions and rerouting thereof
     //> For Preventing 'Insta-Spin' when new path starts behind agent
@@ -24,6 +49,7 @@ class GridWalker{
     this.curRots    = 0;     // counts number of rotations [towards target]
     this.isFacingMT = false; // 'is facing move-to target'
     //> State Flags/Toggles
+    this.debugPrint  = false;
     this.isSelected  = false;
     this.isUsingSP   = false; // agent is utilizing the spatial partitioning system
     this.dispLACell  = false;
@@ -35,41 +61,76 @@ class GridWalker{
   } // Ends Constructor
 
   //####################################################################
-  //>>> [RE]INIT FUNCTIONS
+  //>>> [RE]INIT AND LOADER FUNCTIONS
   //####################################################################
   initGFXVals(){
     //> For Agent Shape
-    this.fill     = color(60); 
-    this.strk_reg = color(0,255,0); 
-    this.sWgt_reg = 1.5;
-    this.strk_sel = color(216,120,0);
-    this.swgt_sel = 3;
+    this.fill_agt = color(255); 
+    this.strk_reg = color(0,0,255); 
+    this.sWgt_reg = 1;
+    this.strk_sel = color(0,255,0);
+    this.sWgt_sel = 2;
     //> For Agent Path
-    this.path_fill = color(255,64);
-    this.path_strk = color(60,128);
-    this.path_sWgt = 4;
-  } // Ends Function initGFXVals 
+    this.fill_path = color(255,64);
+    this.strk_path = color(60,128);
+    this.sWgt_path = 4;
+    //> For Agent SP
+    this.fill_LAC  = color(0,144,0,128);
+  } // Ends Function initGFXVals
+
+
 
   //####################################################################
   //>>> UPDATE/ADVANCE/BEHAVIOR FUNCTIONS
   //####################################################################
 
+
+  /*--------------------------------------------------------------------
+  |>>> Function update
+  +---------------------------------------------------------------------
+  | Overview: TODO
+  +-------------------------------------------------------------------*/
   update(){
+    if(this.isUsingSP){this.updateSP(); this.handleReroute();}
     this.updatePathFollowState();
-    this.moveToCurMoveTar();
+    this.moveToCurMoveTar_viaDesVelAndNewPos();
+    //this.moveToCurMoveTar_viaVelAndDotProd();
   } // Ends Function update
 
 
   /*--------------------------------------------------------------------
-  |>>> Function moveToCurMoveTar
+  |>>> Function updateSP
   +---------------------------------------------------------------------
-  | Overview: TODO
+  | Overview: Calls <updatePos> upon grid map to update its existence 
+  |           within the SP[Map] system (via map cell WRT its position)
+  |           in return for being able to grab nearby agents which also
+  |           report their existence thereto. Receiving its current map
+  |           coordinate acts as a 'receipt' from the map indicating it
+  |           been successfully updated; as I could [but am NOT] simply
+  |           calling <posToCoord> thereof as to enforce this 'receipt'.
   +-------------------------------------------------------------------*/
-  moveToCurMoveTar(){
+  updateSP(){
+    let newCoord = this.map.updatePos(this);
+    if(newCoord != null){this.curCoord = newCoord;}    
+  } // Ends Function updateSP 
+
+
+  /*--------------------------------------------------------------------
+  |>>> Function moveToCurMoveTar (Via DesVelAndNewPos XOR VelAndDotProd)
+  +---------------------------------------------------------------------
+  | Overview: There are currently two variants of the 'moveToCurMoveTar'
+  |           function as I'm at an impasse over which one is the 'best'
+  |           and would [desperately] prefer to move forward on wrapping
+  |           up ZAC Gridwalker and the full unification than ponder on
+  |           this orb into 2023 with no progress made like it's 2016 in
+  |           the Processing-ZAC days. Stress test them when you get the
+  |           chance; until then: simply call one XOR the other to KISS.
+  +-------------------------------------------------------------------*/
+  moveToCurMoveTar_viaDesVelAndNewPos(){
     if(this.curMoveTar){
       if(!this.isFacingMT){this.rotateToFaceMoveTar(); if(!this.isFacingMT){return;}}
       // Steering Agent Behavior [SEEK] in two lines, howaboutdat?!?
-      var desVel = p5.Vector.sub(this.curMoveTar,this.pos).setMag(this.maxSpeed); // desired velocity
+      let desVel = p5.Vector.sub(this.curMoveTar,this.pos).setMag(this.maxSpeed); // desired velocity
       let newPos = p5.Vector.add(this.pos,desVel);
       // Clamp if it overshoots the waypoint
       if(p5.Vector.dist(this.pos,newPos)>p5.Vector.dist(this.pos,this.curMoveTar)){newPos.set(this.curMoveTar);}
@@ -84,6 +145,28 @@ class GridWalker{
     }
   } // Ends Function moveToCurMoveTar
 
+  moveToCurMoveTar_viaVelAndDotProd(){
+    if(this.curMoveTar){
+      let des = p5.Vector.sub(this.curMoveTar,this.pos).setMag(this.maxSpeed);
+      let str = p5.Vector.sub(des,this.vel).limit(this.maxForce);
+      this.vel.add(str).limit(this.maxSpeed);
+
+      let newPos = p5.Vector.add(this.pos,this.vel); // this is the position i will be at upon effecting vel without clamping
+      let vecT_0 = p5.Vector.sub(this.curMoveTar,this.pos); // get ori at t_0 (i.e. pre-update)
+      let vecT_1 = p5.Vector.sub(this.curMoveTar,newPos);   // get ori at t_1 (i.e. on-update a.k.a. 'lookahead')
+
+      if(p5.Vector.dot(vecT_0,vecT_1)<0){this.pos.set(this.curMoveTar); this.curMoveTar=null;}
+      else{this.pos.set(newPos)};
+    }
+    else{
+      this.vel.mult(0);
+    }
+
+    // update orientation WRT difference between it and current velocity
+    if(this.vel.magSq()>0){this.ori.add(p5.Vector.sub(this.vel,this.ori).limit(this.maxForce));}
+  } // Ends Function moveToCurMoveTar
+
+
 
   /*--------------------------------------------------------------------
   |>>> Function updatePathFollowState
@@ -93,7 +176,7 @@ class GridWalker{
   updatePathFollowState(){
     if(this.curWaypt<this.curPath.length){
       let newPos = p5.Vector.add(this.pos,this.vel);
-      if(p5.Vector.dist(this.pos,newPos)>p5.Vector.dist(this.pos,this.curPath[this.curWaypt])){newPos=this.curPath[this.curWaypt];}
+      if(p5.Vector.dist(this.pos,newPos)>p5.Vector.dist(this.pos,this.curPath[this.curWaypt])){newPos.set(this.curPath[this.curWaypt]);}
       if(p5.Vector.dist(this.pos,newPos)==p5.Vector.dist(this.pos,this.curPath[this.curWaypt])){this.curWaypt++;this.setCurTarToNextPathWaypt();}
     }
   } // Ends Function updatePathFollowState 
@@ -111,9 +194,98 @@ class GridWalker{
   } // Ends Function rotateToFaceMoveTar
 
 
+
+
+  /*--------------------------------------------------------------------
+  |>>> Function handleReroute
+  +---------------------------------------------------------------------
+  | Overview: This function realizes basic path-related collision and
+  |           obstacle management for Gridwalker agents. There is a VERY
+  |           detailed article on what this does and how it works in the
+  |           ZAC Technical Notes OneNote. If you're NOT Steven Eiselen,
+  |           and he does NOT have these Technical notes transcribed to
+  |           either GHMD in ZAC's repo xor HTML on the ZAC Page within 
+  |           the 'Research Projects' menu on the EISELEN GitHub site:
+  |           then IOU that content - do email me a [friendly] reminder
+  |           via <steven.eiselen@gmail.com> plz thx. If you are me (lol
+  |           Total Recall 'i am yuu noh yuu ahh mee!'), then get up off
+  |           your lazy, fat, ADHD / Anxiety / Blackpill-Doomer ravaged
+  |           ass and get one of the two up, PRONTO!
+  +---------------------------------------------------------------------
+  |> Implementation Notes/NATs:
+  |   o [Note 1]: For now, this function will be called on every frame;
+  |     which will check-and-fail initial condition unless 'it's time'.
+  +-------------------------------------------------------------------*/
+  handleReroute(){
+    //> if curLACell i.e. 'P_c+1' is not null and curLACell is [OCCUPIED] ==>
+    if(this.curLACell != null && this.map.isCellOccupied(this.curLACell)){
+      //> if (c+1 == curPath.length-1) i.e. path ends at 'P_c+1' ==> remove P_c+1, then return ∎
+      if(this.curWaypt+2 == this.curPath.length){
+        this.curPath.pop(); 
+        if(this.debugPrint){console.log("CASE: P_c+1 ENDS PATH => POP P_c+1");}
+        return;
+      }
+
+      //> else ==> find the first path cell whose SP status is [VACANT], starting from P_c+2 (i.e. find 'P_v')
+      let cellV_idx = -1;
+      for (let i=this.curWaypt+1; i<this.curPath.length; i++) {
+        if(this.map.isCellVacant(this.map.cellViaPos(this.curPath[i]))){
+          cellV_idx=i; 
+          break;
+        }
+      }
+
+      //> if there are NO [VACANT] successor path cells ==> remove P_(c+1,n), then return ∎
+      if(cellV_idx==-1){
+        this.curPath.splice(this.curWaypt+1); 
+        if(this.debugPrint){console.log("CASE: NO VACANT P_v => POP P_C+1,n");}
+        return;
+      }
+
+      //> get the path from P_c to P_v; which will encompass the new: (P_c,⋯,P_v]
+      let pathCell_c  = this.map.cellViaPos(this.curPath[this.curWaypt]);
+      let pathCell_v  = this.map.cellViaPos(this.curPath[cellV_idx]);
+      let pathReRoute = this.pFind.findPath(pathCell_c,pathCell_v,32);
+
+      //> get the path from P_v to P_n, then shift; which will encompass: [P_v+1,⋯,P_n]
+      let pathRemain  = this.curPath.splice(cellV_idx);
+      pathRemain.shift();
+
+      //> concat (P_c,⋯,P_v] with [P_v+1,⋯,P_n], then [P_c] with (P_c,⋯,P_n]; encompassing: [P_c,⋯,P_n];
+      this.curPath = [this.curPath[this.curWaypt].copy()].concat(pathReRoute.concat(pathRemain));
+
+      //> and of course these need to be reset; though I think 'insta-spin' handling does NOT
+      this.curWaypt = 0;      
+      this.setLookaheadCell();
+
+      if(this.debugPrint){console.log(this.curWaypt + " | " + this.curPath.length + " | Frame# : " + frameCount);}
+    }
+  } // Ends Function handleReroute
+
+
+
+
+
   //####################################################################
   //>>> SETTER FUNCTIONS
   //####################################################################
+
+  /*--------------------------------------------------------------------
+  |>>> Function setToUsingSP
+  +---------------------------------------------------------------------
+  | Overview: Self-Explanatory, sans the following context... For now, 
+  |           Gridwalker will have 'isUsingSP' set to [false] to prevent
+  |           issues with other projects it's [now] used in which don't
+  |           utilize SP. On the plus side: it returns the instance for
+  |           function chaining, as to conveniently make call within the
+  |           same expression as the instantiation.
+  +-------------------------------------------------------------------*/
+  setToUsingSP(){
+    this.isUsingSP=true;
+    return this; // for function chaining
+  } // Ends Function setToUsingSP
+
+
 
   /*--------------------------------------------------------------------
   |>>> Function setMaxSpeed
@@ -176,10 +348,13 @@ class GridWalker{
   /*--------------------------------------------------------------------
   |>>> Function setCurTarToNextPathWaypt
   +---------------------------------------------------------------------
-  | Overview: Self Expanatory, 'Nuff Said.
+  | Overview: Self Expanatory, sans call to <setLookaheadCell>, which is
+  |           used (iff agent is using SP system) to check next cell on
+  |           current path to determine if re-route needs to be handled.
   +-------------------------------------------------------------------*/
   setCurTarToNextPathWaypt(){
     this.curMoveTar = (this.curWaypt<this.curPath.length) ? this.curPath[this.curWaypt] : null;
+    if(this.isUsingSP){this.setLookaheadCell();}  
   } // Ends Function setCurTarToNextPathWaypt
 
 
@@ -209,6 +384,20 @@ class GridWalker{
   } // Ends Function giveMoveTar 
 
 
+  /*--------------------------------------------------------------------
+  |>>> Function setLookaheadCell
+  +---------------------------------------------------------------------
+  | Overview: TODO
+  +-------------------------------------------------------------------*/
+  setLookaheadCell(){
+    this.curLACell = (this.curWaypt+1 < this.curPath.length) ? this.map.cellViaPos(this.curPath[this.curWaypt+1]) : null;
+    //if(this.curWaypt+1 < this.curPath.length){this.curLACell = this.map.cellViaPos(this.curPath[this.curWaypt+1]);}
+    //else{this.curLACell = null;}
+  } // Ends Function setLookaheadCell
+
+
+
+
   //####################################################################
   //>>> GETTER FUNCTIONS
   //####################################################################
@@ -219,19 +408,14 @@ class GridWalker{
   }
 
 
-  // debating whether or not to keep this...
-  getMapCell(){
-    return this.map.cellViaPos(this.pos);
-  }
-
-
   //##################################################################
   //>>> RENDER FUNCTIONS
   //##################################################################
   
   render(){
     this.renderBody();
-    //this.renderLACell();
+    this.renderCurPath();
+    this.renderLACell();
   }
 
 
@@ -251,7 +435,7 @@ class GridWalker{
   |           see a triangle; else you'll otherwise see a chevron.
   +-------------------------------------------------------------------*/
   renderBody(){
-    fill(this.fill);
+    fill(this.fill_agt);
     switch(this.isSelected){
       case true:  stroke(this.strk_sel); strokeWeight(this.sWgt_sel); break;
       case false: stroke(this.strk_reg); strokeWeight(this.sWgt_reg); break;
@@ -284,7 +468,7 @@ class GridWalker{
     if(!this.dispCurPath || !this.curPath){return;}
     let pLen = this.curPath.length;
     for (let i=0; i<pLen; i++) {
-      stroke(this.path_fill); strokeWeight(this.path_sWgt);
+      stroke(this.fill_path); strokeWeight(this.sWgt_path);
       line(this.curPath[i].x,this.curPath[i].y,this.curPath[(i+1)%pLen].x,this.curPath[(i+1)%pLen].y);      
     }
   } // Ends Function renderCurPath
@@ -293,16 +477,15 @@ class GridWalker{
   /*--------------------------------------------------------------------
   |>>> Function renderLACell
   +---------------------------------------------------------------------
-  | Overview: [QAD] Renders the lookahead cell, as used when debugging
-  |           Gridwalker-P5JS. Keeping it in case it's still needed.
+  | Overview: Renders lookahead cell, though intended for debug purposes
+  |           only. Keeping it accordingly in case it's still needed.
   +-------------------------------------------------------------------*/
   renderLACell(){
     if(this.dispLACell && this.curLACell){
-      let posLA = this.map.getCellTLPos(this.lookaheadC);
-      fill(0,144,0,128); noStroke();
+      let posLA = this.map.getCellTLPos(this.curLACell);
+      fill(this.fill_LAC); noStroke();
       rect(posLA.x,posLA.y,cellSize,cellSize);
     }    
   } // Ends Function renderLACell
-
 
 } // Ends Class Gridwalker
