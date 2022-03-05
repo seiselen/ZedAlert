@@ -13,29 +13,25 @@
 |    I've developed! Thus this project will most likely be permanently 
 |    archived within the BROADGATE repo as a standalone project, despite
 |    its ZAC counterpart becoming the 'standard' version once completed.
-|  > The Gridwalker implementation features both a neat and consistently
-|    well-behaved solution for the 'insta-spin' bug whenever an agent's
-|    first waypoint is immediately behind itself. Do implement it when
-|    merging this code with the 'P5JS Gridwalker' one; unless I happened
-|    to have already implemented a better one therein.
 +#####################################################################*/
 var worldWide = 1200;
 var worldTall = 800;
 var cellSize  = 20;
 var cellsTall = worldTall/cellSize;
 var cellsWide = worldWide/cellSize;
-var TileType  = {DIRT: 0, WATER: 1, ERROR: -1, cost: (ID)=>{return (ID==TileType.DIRT) ? 1 : (ID==TileType.WATER) ? 1024 : 9999;}}
 
 var gridMap;
 var agent;
 var pathFind;
 
-let showMouseCoords = false;
-var curMouseOption  = "DIRT";
+var showMouseCoords = false;
+var curMouseOption  = "TILE";
+var curPaintOption  = "DIRT";
+var paintOptionSel  = null;
 
 function setup(){
   createCanvas(worldWide,worldTall).parent("viz");
-  gridMap   = new GridMap(cellsTall,cellsWide,cellSize);
+  gridMap   = new TileMap(cellsTall,cellsWide,cellSize);
   pathFind  = new Pathfinder(cellsTall,cellsWide,gridMap);
   agent     = new GridWalker(11,11,cellSize,gridMap);
   initUI(); 
@@ -55,28 +51,39 @@ function draw(){
   drawCanvasBorder();
 } // Ends Function draw
 
-function keyPressed(){if(key=='R'){gridMap.setAllTilesTo(TileType.DIRT);}}
+function keyPressed(){if(key=='R'){gridMap.setAllCellsToTile(TileType.DIRT);}}
 
-//> TODO: Clean this up WRT newer means of calc'ing and inputting coords
 function mousePressed(){
   if(mouseIsPressed&&mouseButton==LEFT&&mouseInCanvas()){
     var mouseCoord = gridMap.posToCoord(mousePtToVec());
-    if(!gridMap.checkInBounds(mouseCoord[0],mouseCoord[1]) || curMouseOption!="AGENT"){return;}
+    if(!gridMap.cellInBounds(mouseCoord[0],mouseCoord[1]) || curMouseOption!="AGENT"){return;}
     agent.givePath(pathFind.findPath(createVector(int(agent.pos.y/cellSize),int(agent.pos.x/cellSize)), createVector(mouseCoord[0],mouseCoord[1])));  
   }
 }
 
 function mousePaint(){
-  if (mouseIsPressed && mouseButton==LEFT && mouseInCanvas() && (curMouseOption=='DIRT'||curMouseOption=='WATER')){
+  if (mouseIsPressed && mouseButton==LEFT && mouseInCanvas() && curMouseOption=='TILE'){
     let mouseCoord = gridMap.posToCoord(mousePtToVec());
-    if(!gridMap.checkInBounds(mouseCoord[0],mouseCoord[1])){return;}
-    gridMap.setValueAt(mouseCoord[0],mouseCoord[1],TileType[curMouseOption]);
+    if(!gridMap.cellInBounds(mouseCoord[0],mouseCoord[1])){return;}
+    gridMap.setValueAt(mouseCoord[0],mouseCoord[1],TileType[curPaintOption]);
   }
 }
 
 function onTilePaintOptionChanged(val){curMouseOption=val.value;}
 function onDisplayOptionChanged(input){let val=input.checked; switch(input.id){case "DISP_GRID" : gridMap.showGrid=val; return; case "DISP_PATH" : pathFind.showCurPath=val; return; case "DISP_OSET" : pathFind.showCurOset=val; return; case "DISP_CSET" : pathFind.showCurCset=val; return;}}
-function initUI(){document.getElementsByName('pntOpt').forEach(o=>{if (o.value==curMouseOption){o.checked=true;}}); select("#DISP_GRID").checked(gridMap.showGrid); select("#DISP_PATH").checked(pathFind.showCurPath); select("#DISP_OSET").checked(pathFind.showCurOset); select("#DISP_CSET").checked(pathFind.showCurCset);}
+function initUI(){
+  document.getElementsByName('pntOpt').forEach(o=>{if (o.value==curMouseOption){o.checked=true;}});
+
+  paintOptionSel = createSelect().parent("cbox_tile");
+  paintOptionSel.option('DIRT');
+  paintOptionSel.option('WATER');
+  paintOptionSel.selected('DIRT');
+  paintOptionSel.changed(()=>{curPaintOption=paintOptionSel.value()});
+
+  select("#DISP_GRID").checked(gridMap.showGrid); 
+  select("#DISP_PATH").checked(pathFind.showCurPath); 
+  select("#DISP_OSET").checked(pathFind.showCurOset); 
+  select("#DISP_CSET").checked(pathFind.showCurCset);}
 function updateUI(){select("#TBOX_POS").html((mouseInCanvas()) ? "("+round(mouseX)+","+round(mouseY)+")" : "N/A"); select("#TBOX_COORD").html((mouseInCanvas()) ? "["+gridMap.posToCoord(mousePtToVec())+"]" : "N/A");}
 
 
@@ -106,7 +113,7 @@ function updateUI(){select("#TBOX_POS").html((mouseInCanvas()) ? "("+round(mouse
 |     o For Path Creation: simply append the coords to the array, then
 |       use <arr>.map(...) with a lambda which applies the coord-to-pos
 |       transformation foreach element. ON THAT NOTE: just freaking use
-|       the current version of 'coordToPos' from 'Pathfind P5JS' or ZAC
+|       the current version of 'coordToMidPt' from 'Pathfind P5JS' / ZAC
 |       MVP; as both are WRT cell midpoints <vs> top-left corner points. 
 |     o Replace pre-caching of neighbor refs (in SearchNodes) with naive
 |       on-line computation for direct indexing where needed. I'm fully
@@ -206,8 +213,8 @@ class Pathfinder{
     
     // make path via parent backtracking / pop [source] and reverse s.t. {[source]+1,-->,[destin]} / cache for viz purposes and return to caller
     let path = [];
-    path.push(this.refMap.coordToPos(current.r,current.c));
-    while(current.parent){path.push(this.refMap.coordToPos(current.parent.r,current.parent.c)); current=current.parent;}
+    path.push(this.refMap.coordToMidPt(current.r,current.c));
+    while(current.parent){path.push(this.refMap.coordToMidPt(current.parent.r,current.parent.c)); current=current.parent;}
     path.pop(); path.reverse(); 
     this.prevPath=path; return path;
   } // Ends Function findPath
@@ -251,51 +258,3 @@ function SearchNode(row,col){
     if (r<cellsTall-1 && c<cellsWide-1){this.neighbors.push(grid[r+1][c+1]);} // BOTTOM RIGHT
   }
 } // Ends Class SearchNode
-
-
-/*======================================================================
-|>>> Class GridMap
-+-----------------------------------------------------------------------
-| Description: 2022 QAD upgrade to the original version, this implements
-|              the bare necessities needed to realize the [now standard]
-|              'GridMap' class as within the TD-P5JS/ZAC-MVP families.
-+-----------------------------------------------------------------------
-|> Special Note On [Pre-]Archival: 
-|   Refer to this code when [eventually] converging all of the remaining
-|   [Grid/Game]Map into a single 'TRUE universal' GridMap definition, as
-|   I like the slick look/design to 'setValueAt / setAllTilesTo'.
-+=====================================================================*/
-class GridMap{  
-  constructor(cellsTall,cellsWide, cellSize){
-    this.cellsTall = cellsTall;
-    this.cellsWide = cellsWide;
-    this.cellSize  = cellSize;
-    this.cellHalf  = cellSize/2;
-    this.map       = [];
-    this.showGrid  = true;
-
-    this.fill_DIRT = color(108,60,0)
-    this.fill_WATR = color(0,108,240);
-    this.strk_GRID = color(24,127);
-    this.sWgt_GRID = 1;
-
-    this.initMap();
-  } // Ends Constructor
-
-  initMap(){for(let r=0; r<this.cellsTall; r++){this.map[r]=[]; for(let c=0; c<this.cellsWide; c++){this.map[r][c]=TileType.DIRT;}}}
-  setAllTilesTo(v){for(let r=0; r<this.cellsTall; r++){for(let c=0; c<this.cellsWide; c++){this.setValueAt(r,c,v);}}}
-  setValueAt(r,c,v){if(this.checkInBounds(r,c)){this.map[r][c]=v;}}
-
-  // Paints ~pctWater% of the map as [WATER] tiles so pathfinder has something more interesting to work with
-  paintRandomWaterQAD(pctWater=34){for(let r=0; r<this.cellsTall; r++){for(let c=0; c<this.cellsWide; c++){if(random(100)<=pctWater){this.setValueAt(r,c,TileType.WATER)}}}}
-
-  checkInBounds(r,c){return (r>=0 && r<this.cellsTall && c>=0 && c<this.cellsWide);}
-  posToCoord(pos){return [floor(pos.y/this.cellSize),floor(pos.x/this.cellSize)];}
-  coordToPos(r,c){return vec2((c*this.cellSize)+this.cellHalf, (r*this.cellSize)+this.cellHalf);}
-
-  getValueAt(r,c){return (!this.checkInBounds(r,c)) ? -1 : this.map[r][c];}
-
-  render(){this.renderMap();this.renderGrid();}
-  renderMap(){noStroke(); for(let r=0; r<this.cellsTall; r++){for(let c=0; c<this.cellsWide; c++){switch(this.map[r][c]){case TileType.DIRT:fill(this.fill_DIRT);break; case TileType.WATER:fill(this.fill_WATR);break;} rect(c*this.cellSize,r*this.cellSize,this.cellSize,this.cellSize);}}}
-  renderGrid(){if(!this.showGrid){return;} strokeWeight(this.sWgt_GRID); stroke(this.strk_GRID); for(let i=0; i<=this.cellsTall; i++){line(0,this.cellSize*i,width,this.cellSize*i);} for(let j=0; j<=this.cellsWide; j++){line(this.cellSize*j,0,this.cellSize*j,height);}} 
-} // Ends Class GridMap

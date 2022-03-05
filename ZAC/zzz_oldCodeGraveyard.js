@@ -20,6 +20,25 @@
 ######################################################################*/
 
 
+
+/*----------------------------------------------------------------------
+|>>> Snippet: Old Method - Disabling Default Right Mouse Click Behavior
++-----------------------------------------------------------------------
+|> Overview: This was the old method for disabling the default behavior
+|            for right mouse clicks (i.e. options menu pop-up); s.t. it
+|            can be used for stuff like commanding an agent to move to
+|            another cell in a gridworld without the menu popping up. On
+|            02/26/22 within the 'Gridwalker-P5JS' ZAC-related project:
+|            it was replaced with a new method featuring a lambda which,
+|            when called after a right mouse click event, evaluates the
+|            negation of the <mouseInCanvas> function. This new behavior
+|            thus disables the context menu popup whenever the mouse is
+|            within the canvas, and enables it back whenever outside the
+|            canvas: which is the IDEAL behavior I had always desired!
++---------------------------------------------------------------------*/
+document.oncontextmenu = function(){return false;}
+
+
 /*----------------------------------------------------------------------
 |>>> Function Gridwalker.gridWalkAlongPath
 +-----------------------------------------------------------------------
@@ -129,3 +148,7 @@ var Colors = {
   orange:    "#FF7800", // color(255,120,0)
   darkGray:  "#3C3C3C", // color(60,60,60)
 } // Ends Interface Colors
+
+
+
+

@@ -72,7 +72,15 @@ class MapEditor{
   //> Warning: Invalid Input NOT handled (though painted tiles will likely appear 'ERROR' purple)
   setPaintType(newType){this.paintType = newType;}
 
-  setPaintSize(coTerm){this.paintSize = constrain(this.paintSize+coTerm, 1, MapEditor.maxPaintSize);}
+  //> Adjust Paint Size (i.e. via some coterm)
+  adjPaintSize(coTerm){
+    this.paintSize = constrain(this.paintSize+coTerm, 1, MapEditor.maxPaintSize);
+  }
+
+  //> Set Paint Size (i.e. to some new value)
+  setPaintSize(val){
+    this.paintSize = constrain(val, 1, MapEditor.maxPaintSize);
+  }
 
   paintAtMouseTile(){
     let mouseCoord = this.map.posToCoord(mousePtToVec());
@@ -103,7 +111,7 @@ class MapEditor{
   +-------------------------------------------------------------------*/
   floodFill(seedRow, seedCol, newVal){
     if(!this.map.cellInBounds(seedRow,seedCol)){return;}
-    let curVal    = this.map.map_tile[seedRow][seedCol];
+    let curVal    = this.map.getValueAt(seedRow,seedCol);
     let temp      = null;
     let openSet   = [];
     let closedSet = new Map();
@@ -121,7 +129,7 @@ class MapEditor{
           // Von Neuman Neighborhood <vs> Moore bc of pesky diagonal-border cells
           if(this.map.cellInBounds(adjR,adjC) && (adjR==temp[0] || adjC==temp[1])){
             // Final conditional makes sure all prospective filled tiles need to match original seed tile type
-            if(!closedSet.get(""+adjR+","+adjC) && this.map.map_tile[adjR][adjC] == curVal){
+            if(!closedSet.get(""+adjR+","+adjC) && this.map.getValueAt(adjR,adjC) == curVal){
               closedSet.set(""+adjR+","+adjC, 1);
               openSet.push([adjR,adjC]);    
             }          
@@ -685,15 +693,8 @@ class MapEditor{
     let cSize = this.map.cellSize;
     
     stroke(255,255,0); strokeWeight(4);
-    switch(this.paintType){
-      case TileType.ROAD  : fill(this.map.fill_terr_ROAD);  break;
-      case TileType.PAVE  : fill(this.map.fill_terr_PAVE);  break;
-      case TileType.DIRT  : fill(this.map.fill_terr_DIRT);  break;
-      case TileType.GRASS : fill(this.map.fill_terr_GRASS); break;
-      case TileType.SAND  : fill(this.map.fill_terr_SAND);  break;
-      case TileType.WATER : fill(this.map.fill_terr_WATER); break;
-      default:              fill(this.map.fill_terr_ERROR); break;
-    }
+
+    fill(this.map.getTileColor(this.paintType));
 
     push(); translate(floor(mouseX/cSize)*cSize,floor(mouseY/cSize)*cSize);
     if(!this.paintFill){rect(0,0,min(this.map.cellsWide-floor(mouseX/cSize), this.paintSize)*cSize,min(this.map.cellsTall-floor(mouseY/cSize), this.paintSize)*cSize);       }

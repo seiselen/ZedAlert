@@ -5,137 +5,68 @@ var cellSize  = 32;
 var cellSizeH = cellSize/2;
 var cellsTall = worldTall/cellSize;
 var cellsWide = worldWide/cellSize;
-
-var showOCSet = true;
-
 //>>> Data Structure Declarations
-var gridMap;
+var tileMap;
+var spMap;
 var pathFind;
+var uiManager;
 var agents = [];
 var bldgs  = [];
-var selAgent = null;
 
-// Current Interaction Mode and Sub-Mode
-var mouseMode = "agent";
-var paintOption = "dirt";
-var agentOption = "sel";
-
-function setup() {
+function setup(){
   createCanvas(worldWide,worldTall).parent(select("#pane_viz"));
-  document.oncontextmenu = function(){return false;} // handles right click issue
-  gridMap  = new GWMap(cellsTall,cellsWide,cellSize);
-  pathFind = new GWPathfinder(gridMap);
+  document.oncontextmenu = ()=>{return !mouseInCanvas()}; // FINALLY REALIZED DESIRED BEHAVIOR!
+  spMap     = new GridSPMap(cellsTall,cellsWide,cellSize);
+  tileMap   = new TileMap(cellsTall,cellsWide,cellSize);
+  pathFind  = new GWPathfinder(tileMap,spMap);
+  uiManager = new GWDemoUIManager();
+  uiManager.loadMapAgtConfig(map_04,agt_04);
 
-  loadMapAgtConfig(map_04,agt_04);
+  //uiManager.createAgent(11,1);
+  //uiManager.createAgent(20,28);
+  //uiManager.createBldg([3,7]);
+} // Ends P5JS Function setup
 
-  //agents.push(new GWAgent(11,1,gridMap));
-  //agents.push(new GWAgent(20,28,gridMap));
-  //bldgs.push(new Building(3,7,[3,4],gridMap));
-
-  initUI();
-}
-
-function loadMapAgtConfig(map_cf,agt_cf){
-  gridMap.loadMap(map_cf);
-  agt_cf.forEach((rc)=>agents.push(new GridWalker(rc[0],rc[1],cellSize/2).setToUsingSP()));
-}
-
-
-function draw() {
+//> ASSUME ORDER COUNTS, ESP. RENDER CALLS, I.E. IT'S [VERY] MUCH INTENDED
+function draw(){
   //>>> UI CALLS
-  onMouseDown();
-
+  if(mouseInCanvas()&&mouseIsPressed){uiManager.onMouseDown(mouseButton);}
   //>>> UPDATE CALLS
-  updateLabels();
+  uiManager.updateLabels();
   agents.forEach((a)=>a.update());
- 
-  //>>> RENDER CALLS 
-  gridMap.render();
-  if(showOCSet){pathFind.displayBothSets()};  
+  //>>> RENDER CALLS
+  background(240,240,255);
+  tileMap.renderMap();
+  uiManager.drawCursor();
+  spMap.renderMap();
+  tileMap.renderGrid(); // doesn't matter who renders it
+  if(pathFind.showOCSet){pathFind.displayBothSets()};
   agents.forEach((a)=>a.render());
   bldgs.forEach((b)=>b.render());
-
-  drawMouseCoordCursor();
   drawCanvasBorder();
-}
-
-
-function drawMouseCoordCursor(){
-  if(!mouseInCanvas()){return;}
-  let sinRand = map(sin(((frameCount%30)/30)*PI),-1,1,127,255);
-  noCursor();
-  push(); 
-    translate(floor(mouseX/cellSize)*cellSize, floor(mouseY/cellSize)*cellSize);
-    switch(mouseMode){
-      case "paint": stroke(0,255,0,sinRand); strokeWeight(2); switch(paintOption){
-        case "dirt": fill(144,84,12); break; 
-        case "road": fill(120,120,120); break; 
-        case "sand": fill(255,216,144); break; 
-        case "watr": fill(60,120,180); break; 
-        default: fill(255,0,255);
-      } rect(0,0,cellSize,cellSize); break;// Ends Switch | [paintOption]
-      case "agent": noFill(); strokeWeight(2); switch(agentOption){
-        case "sel": stroke(60,60,255,sinRand); line(cellSizeH,cellSize*.25,cellSizeH,-cellSize*.25); line(cellSizeH,cellSize*.75,cellSizeH,cellSize*1.25); line(-cellSize*.25,cellSizeH,cellSize*.25,cellSizeH); line(cellSize*.75,cellSizeH,cellSize*1.25,cellSizeH); break;
-        case "add": stroke(60,255,60,sinRand); line(cellSizeH,0,cellSizeH,cellSize); line(0,cellSizeH,cellSize,cellSizeH); break;
-        case "rem": stroke(255,60,60,sinRand); line(0,0,cellSize,cellSize); line(0,cellSize,cellSize,0); break;
-      } rect(0,0,cellSize,cellSize); break;// Ends Switch | [agentOption]
-      case "bldg": Building.renderBldgShape(vec2()); noFill(); stroke(60,255,60,sinRand); strokeWeight(4); rect(0,0,cellSize*3,cellSize*4);  
-      break;
-      // Ends | [bldgOption]
-    } // Ends Switch | [mouseMode]
-  pop();
-} // Ends Function drawCursor
-
+} // Ends P5JS Function draw
 
 function mousePressed(){
-  if(!mouseInCanvas()){return;}
-      let mapCell = gridMap.cellViaPos(mousePtToVec());
+  if(mouseInCanvas()){uiManager.onMousePressed(mouseButton);}
+} // Ends P5JS UI Function mousePressed
 
-
-  if(mouseMode=="agent"){
-    if(mouseButton=='left'){switch(agentOption){
-      case 'sel': onSelectAgent(); return;
-      case 'add': /*onAddAgent();*/ return;
-      case 'rem': /*onRemAgent();*/ return;
-    }}
-    if(selAgent&&mouseButton=='right'){
-      let agtCell = gridMap.cellViaPos(selAgent.pos);
-      selAgent.givePath(pathFind.findPath(agtCell,mapCell));
-      return;
-    }
-  }
-
-  // needs a TON more handling, but okay for basic agent obstacle re-route testing
-  if(mouseMode=="bldg" && mouseButton=='left'){
-    if(gridMap.canBuildBldg(mapCell[0],mapCell[1],3,4)){
-      bldgs.push(new Building(mapCell[0],mapCell[1],[3,4],gridMap));
-    }
-  }
-
-}
-
-
-function onMouseDown(){
-  if(mouseInCanvas()&&mouseIsPressed&&mouseButton==LEFT&&mouseMode=="paint"){
-    gridMap.setValueAt(gridMap.cellViaPos(mousePtToVec()),CellType[paintOption]);
-  }
-} // Ends Function onMouseDown
-
-
-var toggleSpitMapDefAsP = true;
 function keyPressed(){
-  if(toggleSpitMapDefAsP && key == 's'){createP(gridMap.mapToString("<br>"));}
-  toggleSpitMapDefAsP = false;
-}
+  uiManager.onKeyPressed(key);
+} // Ends P5JS UI Function keyPressed
 
 
+//####################################################################
+//>>> QAD BUILDING OBJ DEF
+//####################################################################
+class GWBldg{
+  constructor(r,c,d,m){
+    this.pos   = createVector(c*cellSize,r*cellSize);
+    this.dim   = createVector(d[0]*cellSize, d[1]*cellSize);
+    this.cells = this.dimToCells(r,c,d[0],d[1]);
+    this.spMap = m;
+    this.spMap.postBuilding(this); // let SPMap know that I exist
+  }
+  dimToCells(ri,ci,w,t){let ret=[]; for(let r=0; r<t; r++){for(let c=0; c<w; c++){ret.push([ri+r,ci+c]);}} return ret;}
+  render(){push(); translate(this.pos.x,this.pos.y); stroke(0); /*[Walls (s.t. order:{left,back,right,front})]=>*/ strokeWeight(1); fill(0,144,144); quad(0,0,16,8,16,80,0,96); quad(0,0,96,0,80,8,16,8); quad(80,8,96,0,96,96,80,80); quad(16,80,80,80,96,96,0,96); /*[Garage Door]=>*/ fill(180); strokeWeight(1); rect(32,80,32,16); line(32,84,64,84); line(32,88,64,88); line(32,92,64,92); /*[Roof]=>*/ fill(60); strokeWeight(2); rect(16,8,64,72); /*['Bib']=>'*/ fill(120,120,120); noStroke(); rect(0,96,96,16); quad(0,112,96,112,64,128,32,128); pop();}
+} // Ends Class GWBldg
 
-// using linear search until/unless I implement spatial partitioning
-function onSelectAgent(){
-  let mapCell = gridMap.cellViaPos(mousePtToVec());
-  let result  = agents.filter((a)=>a.inSameCellAsMe(mapCell));
-  // in all cases => de-select currently selected agent (A/A)
-  if(selAgent){selAgent.isSelected=false;selAgent=null;}
-  // at least 1 agent @ mouse cell => select (via global and agent rep)
-  if(result.length>0){result[0].isSelected=true; selAgent = result[0];}
-}

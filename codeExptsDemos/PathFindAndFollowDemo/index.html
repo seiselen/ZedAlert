@@ -6,6 +6,9 @@
     <!-- External Libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <script src="../../ZAC/grid_walker.js"></script>
+    <script src="../../ZAC/tile_type.js"></script>  
+    <script src="../../ZAC/grid_map.js"></script>
+    <script src="../../ZAC/tile_map.js"></script>
     <script src="https://seiselen.github.io/PROJECT-BROADGATE/utils.js"></script>
     <!-- Project Code -->
     <script src="main.js"></script>
@@ -14,6 +17,7 @@
     <style type="text/css">
       body{font-family: monospace; font-weight: bold; font-size: 16px;}
       button{font-family: monospace; font-weight: bold; font-size: 16px;}
+      #cbox_tile select {background-color: black; color: white; font-family: monospace; font-weight: bold; font-size: 16px;}
     </style>
   </head>
   <body>
@@ -26,19 +30,16 @@
           <td class="optHeader" colspan="2">Mouse Position Info</td>
         </tr>
         <tr>
-          <td class="noTextSel">Paint Dirt Tile</td><td><input class="bigRadButt" type="radio" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="DIRT"></td>
+          <td class="noTextSel">Paint <span id="cbox_tile"></span> Tile</td><td><input class="bigRadButt" type="radio" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="TILE"></td>
           <td class="noTextSel">Display Map Grid</td><td><label class="switch"><input type="checkbox" id="DISP_GRID" onclick="onDisplayOptionChanged(this);"><span class="slider"></span></label></td>
           <td class="noTextSel">Display Path Open Set</td><td><label class="switch"><input type="checkbox" id="DISP_OSET" onclick="onDisplayOptionChanged(this);"><span class="slider"></span></label></td>
           <td class="noTextSel">Position</td><td class="noTextSel" id="TBOX_POS" style="text-align: center; min-width: 108px; background-color: rgba(60,60,60,0.25);">(8888,8888)</td>
         </tr>
         <tr>
-          <td class="noTextSel">Paint Water Tile</td><td><input class="bigRadButt" type="radio" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="WATER"></td>
+          <td class="noTextSel">Move Agent</td><td><input class="bigRadButt" type="radio" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="AGENT"></td>
           <td class="noTextSel">Display Path</td><td><label class="switch"><input type="checkbox" id="DISP_PATH" onclick="onDisplayOptionChanged(this);"><span class="slider"></span></label></td>
           <td class="noTextSel">Display Path Closed Set</td><td><label class="switch"><input type="checkbox" id="DISP_CSET" onclick="onDisplayOptionChanged(this);"><span class="slider"></span></label></td>
           <td class="noTextSel">Cell Coord</td><td class="noTextSel" id="TBOX_COORD" style="text-align: center; min-width: 108px; background-color: rgba(60,60,60,0.25);">[99,99]</td>
-        </tr>
-        <tr>
-          <td class="noTextSel">Move Agent</td><td><input class="bigRadButt" type="radio" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="AGENT"></td>
         </tr>
       </table>
     </div>

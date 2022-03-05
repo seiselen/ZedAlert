@@ -15,11 +15,15 @@ h1 {user-select: none; margin-block-start: 0px; margin-block-end: 0px;}
 .lab_cBox {user-select: none; min-width: 40px; text-align: center; background: #181818FF;}   
 .inp_rad  {display: block; font-size: 32px; height: 0.5em; width: 0.5em; margin: auto;}
 .inp_but {font-size: 15px; font-weight: bold; padding-top: 4px; padding-bottom: 4px;}
-.lab_desc button:nth-child(1):hover {color: rgb(0,120,0);}
-.lab_desc button:nth-child(2):hover {color: rgb(180,0,0);}
-.lab_desc button:nth-child(1):active {color: white; background-color: rgb(0,240,0);}
-.lab_desc button:nth-child(2):active {color: white; background-color: rgb(240,0,0);}
-.inp_but2 {min-width: 124px; padding: 4px; font-size: 15px; font-weight: bold;}
+.inp_but2 {min-width: 124px; padding: 4px; font-size: 16px; font-weight: bold;}
+.tab_subP {min-width: 258px;}
+.lab_head2 {user-select: none; font-weight: bold; border-top: 0px; text-align: center;}
+
+/*> Special Handling for 'LAUNCH PATH' and 'CLEAR PATH' buttons */
+#but_pLaunch button:nth-child(1):hover {color: rgb(0,120,0);}
+#but_pLaunch button:nth-child(1):active {color: white; background-color: rgb(0,240,0);}
+#but_pClear  button:nth-child(1):hover {color: rgb(180,0,0);}
+#but_pClear  button:nth-child(1):active {color: white; background-color: rgb(240,0,0);}
 
 /*> Sources: <w3schools.com/howto/howto_css_switch.asp> and <stackoverflow.com/questions/39846282/how-to-add-the-text-on-and-off-to-toggle-button> */
 .switch {position: relative; display: inline-block; width: 90px; height: 24px;}

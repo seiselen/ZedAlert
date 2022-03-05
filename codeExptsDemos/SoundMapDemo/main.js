@@ -1,6 +1,7 @@
 var demoMap;
-var curSoundRad = 87;
-var soundAddVal = 80; // current score added to cell when it hears sound
+var curSoundRad   = 87;
+var soundAddVal   = 80;
+var soundDecayFac = 0.95;
 
 function setup(){
   createCanvas(800,800).parent("viz");
@@ -11,7 +12,7 @@ function setup(){
 function draw(){
   background(240);
   autoToot();
-  demoMap.updateCells();
+  demoMap.advanceSound();
   demoMap.render();
   drawRadDiscWRTMouse();
   drawCurSoundRad();
@@ -19,14 +20,14 @@ function draw(){
   drawCanvasBorder();
 }
 
-function mousePressed(){demoMap.makeASound(mousePtToVec(),curSoundRad);}
+function mousePressed(){demoMap.spreadSound(mousePtToVec(),curSoundRad);}
 function mouseWheel(event){curSoundRad-=Math.sign(event.delta)*((keyIsPressed===true && keyCode === SHIFT) ? 8 : 2);}
 
 //######################################################################
 //>>> OTHER / 'UNIQUE-TO-THIS-PROJECT' FUNCTIONS
 //######################################################################
 function drawRadDiscWRTMouse(){
-  let pos = demoMap.posToMidpt(mousePtToVec());
+  let pos = demoMap.posToMidPt(mousePtToVec());
   noFill(); stroke(244,60,0); strokeWeight(2);
   ellipse(pos.x,pos.y,curSoundRad*2);
 }
@@ -37,5 +38,5 @@ function drawCurSoundRad(){
 }
 
 function autoToot(frmIntvl=30, minSRad=50, maxSRad=240){
-  if(frameCount%frmIntvl==0){demoMap.makeASound(vec2(random(0,width),random(0,height)),random(minSRad,maxSRad));}  
+  if(frameCount%frmIntvl==0){demoMap.spreadSound(vec2(random(0,width),random(0,height)),random(minSRad,maxSRad));}  
 }

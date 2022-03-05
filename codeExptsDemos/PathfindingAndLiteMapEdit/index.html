@@ -2,95 +2,49 @@
 <html>
   <head>
     <meta charset="UTF-8"/>
-    <title>Pathfinding P5JS</title>
+    <title>PathFind + MapEdit (ZAC)</title>
     <link rel="stylesheet" href="styles.css" type="text/css">
     <!-- P5JS Lib and 'Eiselen Utils' Imports -->
     <script src="https://seiselen.github.io/PROJECT-BROADGATE/utils.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <!-- Project Code -->
-    <script src="ui_ux.js"></script>    
-    <script src="priority_queue.js"></script>
-    <script src="drag_objs.js"></script>    
-    <script src="path_find.js"></script>
-    <script src="map_edit.js"></script>
-    <script src="map_defs.js"></script>       
-    <script src="game_map.js"></script>
+    <script src="map_edit_ui.js"></script>
+    <script src="path_find_ui.js"></script>
+    <script src="../../ZAC/priority_queue.js"></script>    
+    <script src="../../ZAC/tile_type.js"></script>
+    <script src="../../ZAC/enum_direction.js"></script>     
+    <script src="../../ZAC/map_edit.js"></script>
+    <script src="../../ZAC/grid_map.js"></script>
+    <script src="../../ZAC/tile_map.js"></script>
+    <script src="../../ZAC/path_find.js"></script>
+    <script src="../../ZAC/map_defs.js"></script>
     <script src="main.js"></script>
   </head>
   <body>
-    <div id="h1_head"><h1>Pathfinding P5JS</h1></div>
+    <div id="h1_head"><h1>PathFind + MapEdit (in P5JS for ZAC)</h1></div>
     <div id="cont_tab"><div id="cont_row">
       <div class="cont_col" id="pane_viz"></div>
       <div class="cont_col" id="pane_ui">
         <table>
-          <tr><td class="lab_head" colspan="2">Current Info/Stats</td></tr>
+          <tr><td class="lab_head" colspan="2">Basic Info/Options</td></tr>
           <tr><td class="lab_desc">FPS</td><td class="lab_cVal" id="labl_curFPS"></td></tr>
           <tr><td class="lab_desc">Mouse Position</td><td class="lab_cVal" id="labl_mousePos"></td></tr>
           <tr><td class="lab_desc">Mouse Map Cell</td><td class="lab_cVal" id="labl_mouseCell"></td></tr>
-          <tr><td class="lab_desc">Start Cell Coord</td><td class="lab_cVal" id="labl_tokenS"></td></tr>
-          <tr><td class="lab_desc">Goal Cell Coord</td><td class="lab_cVal" id="labl_tokenG"></td></tr>
-          <tr><td class="lab_desc">Total Path Cost</td><td class="lab_cVal" id="labl_pathCost"></td></tr>
-          <tr><td class="lab_desc">Total Path Hops</td><td class="lab_cVal" id="labl_pathHops"></td></tr>
-        </table>
-        <table>
-          <tr><td class="lab_head" colspan="2">Display Options</td></tr>
-          <tr><td class="lab_desc">Map Cells Grid</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showGrid"/></td></tr> 
-          <tr><td class="lab_desc">Impassible Cells</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showImpassible"/></td></tr>
-          <tr><td class="lab_desc">Pathfind Path Cells</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showPath"/></td></tr>                 
-          <tr><td class="lab_desc">Pathfind Open Set</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showOSet"/></td></tr>
-          <tr><td class="lab_desc">Pathfind Closed Set</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showCSet"/></td></tr>
+          <tr><td class="lab_desc">Map Cells Grid</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showGrid"/></td></tr>
         </table>
         <table>
           <tr><td class="lab_head" colspan="2">Mouse Interaction Mode</td></tr>
           <tr style="text-align:center;">
-            <td style="user-select: none; border-bottom:0px; border-right: hidden; background: rgb(216, 120, 0);"><button class="inp_but2" id="modePaint" onclick="onMouseIntrctModeChanged(this);" value="paint">TILE PAINT</button></td>
+            <td style="user-select: none; border-bottom:0px; border-right: hidden; background: rgb(216, 120, 0);"><button class="inp_but2" id="modePaint" onclick="onMouseIntrctModeChanged(this);" value="paint">MAP EDIT</button></td>
             <td style="user-select: none; border-bottom:0px; border-left: hidden; background: rgb(0, 60, 216);"><button class="inp_but2" id="modePath" onclick="onMouseIntrctModeChanged(this);" value="path">PATH FIND</button></td>
           </tr>
         </table>
-
-        <!-- NOTE: paintOptions and pathOptions are now MUTEX i.e. only one will disp @ a time (the other is set to 'hidden') -->
-
-        <table id="paintOptions">
-          <tr><td class="lab_head" colspan="4" style="font-weight: bold; background: rgb(216, 120, 0); border-top: 0px;">Tile Paint Options</td></tr>
-          <tr>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Road</td>
-            <td class="lab_rad" style="background: rgb( 84, 84, 84);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="ROAD"></td>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Paved</td>
-            <td class="lab_rad" style="background: rgb(168,168,168);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="PAVE"></td>
-          </tr>
-          <tr>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Dirt</td>
-            <td class="lab_rad" style="background: rgb(144, 84, 12);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="DIRT" checked></td>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Grass</td>
-            <td class="lab_rad" style="background: rgb(  0,144, 24);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="GRASS"></td>
-          </tr>
-          <tr>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Sand</td>
-            <td class="lab_rad" style="background: rgb(255,216, 96);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="SAND"></td>
-            <td class="lab_desc" style="min-width: 60px; background: #181818FF; text-align: center;">Water</td>
-            <td class="lab_rad" style="background: rgb( 60,120,180);"><input type="radio" class="inp_rad" name="pntOpt" onclick="onTilePaintOptionChanged(this);" value="WATER"></td>
-          </tr>
-
-          <tr>
-            <td class="lab_desc" colspan="4"><span style="vertical-align: middle;">Flood Fill Mode &nbsp &nbsp</span><label class="switch"><input type="checkbox" id="floodFillToggle"><span class="slider"></span></label></td>
-          </tr>
-        </table>
-
-        <table id="pathOptions">
-          <tr><td class="lab_head" style="font-weight: bold; background: rgb(0, 60, 216); border-top: 0px;" colspan="2">Pathfind Options</td></tr>
-          <tr><td class="lab_desc">Breadth-First Search</td><td class="lab_rad"><input type="radio" class="inp_rad" name="pathOpt" onclick="onSearchAlgoModeChanged(this.value);" value="BFS" checked=""></td></tr>
-          <tr><td class="lab_desc">Greedy Best-First</td><td class="lab_rad"><input type="radio" class="inp_rad" name="pathOpt" onclick="onSearchAlgoModeChanged(this.value);" value="GBF"></td></tr>
-          <tr><td class="lab_desc">Uniform Cost</td><td class="lab_rad"><input type="radio" class="inp_rad" name="pathOpt" onclick="onSearchAlgoModeChanged(this.value);" value="UCS"></td></tr>
-          <tr><td class="lab_desc">A* (A-Star)</td><td class="lab_rad"><input type="radio" class="inp_rad" name="pathOpt" onclick="onSearchAlgoModeChanged(this.value);" value="AST"></td></tr>
-          <tr><td class="lab_desc" style="text-align: center; padding-top: 8px" colspan="2"> 
-            <button class="inp_but" name="pathOpt" onclick="onPathFindButtonPressed(this.value);" value="launch">LAUNCH PATH</button> 
-            <button class="inp_but" name="pathOpt" onclick="onPathFindButtonPressed(this.value);" value="clear">CLEAR PATH</button> </td></tr>
-        </table>
+        <!-- NOTE: paintOptions and pathOptions now MUTEX i.e. only one will appear at a time s.t. the other is set to hidden -->
+        <div id="paintOptions"></div>
+        <div id="pathOptions"></div>
       </div>
     </div>
   </div>
-  <div>
-    <p id="mapInfoOutGhettoStyle" style="color: black; font-size: 9px; white-space: pre-wrap; max-width: 1024px;"></p>
-  </div>
+  <div><p id="mapInfoOutGhettoStyle" style="color: black; font-size: 9px; white-space: pre-wrap; max-width: 1024px;"></p></div>
   </body>
 </html>

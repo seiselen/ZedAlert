@@ -26,11 +26,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <script src="https://seiselen.github.io/PROJECT-BROADGATE/utils.js"></script>  
     <!-- Project Code -->
-    <script src="../../ZAC/grid_walker.js"></script>    
-    <script src="mapDefs.js"></script>
-    <script src="gw_map.js"></script>
+    <script src="../../ZAC/grid_walker.js"></script>
+    <script src="../../ZAC/tile_type.js"></script>
+    <script src="../../ZAC/grid_map.js"></script>
+    <script src="../../ZAC/tile_map.js"></script>
+    <script src="../../ZAC/sp_map.js"></script>          
+    <script src="../../ZAC/map_defs.js"></script>
     <script src="gw_path.js"></script>
-    <script src="gw_bldg.js"></script>
     <script src="gw_UI.js"></script>
     <script src="main.js"></script>
   </head>
@@ -45,39 +47,36 @@
       </table>
       <table>
         <tr><td class="lab_h1" colspan="2">Display Options</td></tr>
-        <tr><td class="lab_des2">Show Map Grid:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showGrid"/></td></tr> 
-        <tr><td class="lab_des2">Show Map SP Info:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showSPMap"/></td></tr>         
-        <tr><td class="lab_des2">Show Open/Closed Sets:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showOCSets"/></td></tr>   
+        <tr><td class="lab_des2">Map Grid:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showGrid"/></td></tr> 
+        <tr><td class="lab_des2">Map SP Info:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showSPMap"/></td></tr>         
+        <tr><td class="lab_des2">Open/Closed Sets:</td><td class="lab_cBox"><input type="checkbox" onkeydown="event.preventDefault()" id="cBox_showOCSets"/></td></tr>   
       </table>
       <table>
         <tr><td class="lab_h1" colspan="3">Mouse Interaction Mode</td></tr>
         <tr>
-          <td class="lab_rad">Agent &nbsp<input type="radio" class="inp_rad" name="mseMode" onclick="onMouseIntrctModeChanged(this);" value="agent" checked></td>
-          <td class="lab_rad">Bldg &nbsp<input type="radio" class="inp_rad" name="mseMode" onclick="onMouseIntrctModeChanged(this);" value="bldg" ></td>
-          <td class="lab_rad">Tile &nbsp<input type="radio" class="inp_rad" name="mseMode" onclick="onMouseIntrctModeChanged(this);" value="paint" ></td></tr>
+          <td class="lab_rad">Agent &nbsp<input type="radio" class="inp_rad" name="mse" onclick="uiManager.onMouseModeChanged(this);" value="agent" checked></td>
+          <td class="lab_rad">Bldg &nbsp<input type="radio" class="inp_rad" name="mse" onclick="uiManager.onMouseModeChanged(this);" value="bldg" ></td>
+          <td class="lab_rad">Tile &nbsp<input type="radio" class="inp_rad" name="mse" onclick="uiManager.onMouseModeChanged(this);" value="paint" ></td></tr>
       </table>
       <table>
         <tr><td class="lab_h1" colspan="3">Agent Mode Options</td></tr>
-        <tr><td class="lab_desc">Select Existing Agent</td><td class="lab_rad" style="color: black; background: #003CFFB4;"><input type="radio" class="inp_rad" name="agtMode" onclick="onSelOrPntOptionChanged(this);" value="agt_sel" checked></td></tr>
-        <tr><td class="lab_desc">Add New Agent</td><td class="lab_rad" style="color: black; background: #1EFF1EB4;"><input type="radio" class="inp_rad" name="agtMode" onclick="onSelOrPntOptionChanged(this);" value="agt_add"></td></tr>
-        <tr><td class="lab_desc">Remove Existing Agent</td><td class="lab_rad" style="color: black; background: #FF3C00B4;"><input type="radio" class="inp_rad" name="agtMode" onclick="onSelOrPntOptionChanged(this);" value="agt_rem"></td></tr>
+        <tr><td class="lab_desc">Select Existing Agent</td><td class="lab_rad" style="color: black; background: #003CFFB4;"><input type="radio" class="inp_rad" name="agt" onclick="uiManager.onRadOptChanged(this);" value="sel" checked></td></tr>
+        <tr><td class="lab_desc">Add New Agent</td><td class="lab_rad" style="color: black; background: #1EFF1EB4;"><input type="radio" class="inp_rad" name="agt" onclick="uiManager.onRadOptChanged(this);" value="add"></td></tr>
+        <tr><td class="lab_desc">Remove Existing Agent</td><td class="lab_rad" style="color: black; background: #FF3C00B4;"><input type="radio" class="inp_rad" name="agt" onclick="uiManager.onRadOptChanged(this);" value="rem"></td></tr>
       </table>
       <table>
         <tr><td class="lab_h1" colspan="3">Paint Mode Options</td></tr>
-        <tr><td class="lab_desc">Place Dirt Tile</td><td class="lab_rad" style="background: #90540CB4;"><input type="radio" class="inp_rad" name="pntMode" onclick="onSelOrPntOptionChanged(this);" value="pnt_dirt" checked></td></tr>
-        <tr><td class="lab_desc">Place Sand Tile</td><td class="lab_rad" style="background: #FFD890B4;"><input type="radio" class="inp_rad" name="pntMode" onclick="onSelOrPntOptionChanged(this);" value="pnt_sand"></td></tr>
-        <tr><td class="lab_desc">Place Road Tile</td><td class="lab_rad" style="background: #787878B4;"><input type="radio" class="inp_rad" name="pntMode" onclick="onSelOrPntOptionChanged(this);" value="pnt_road"></td></tr>
-        <tr><td class="lab_desc">Place Water Tile</td><td class="lab_rad" style="background: #3C78B4B4;"><input type="radio" class="inp_rad" name="pntMode" onclick="onSelOrPntOptionChanged(this);" value="pnt_watr"></td></tr>
+        <tr><td class="lab_desc">Place Road Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="ROAD"></td></tr>
+        <tr><td class="lab_desc">Place Pavement Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="PAVE"></td></tr>
+        <tr><td class="lab_desc">Place Dirt Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="DIRT" checked></td></tr>
+        <tr><td class="lab_desc">Place Grass Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="GRASS"></td></tr>        
+        <tr><td class="lab_desc">Place Sand Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="SAND"></td></tr>
+        <tr><td class="lab_desc">Place Water Tile</td><td class="lab_rad" style="background: #FFFFFFFF;"><input type="radio" class="inp_rad" name="pnt" onclick="uiManager.onRadOptChanged(this);" value="WATER"></td></tr>
       </table>
-      <!--
-      <table>
-        <tr><td class="lab_h1" colspan="2">Pathfinding Options</td></tr>
-        <tr><td class="lab_des2">Use Breadth First Search</td><td class="lab_rad"><input type="radio" class="inp_rad" name="saMode" onclick="onSearchAlgoOptionChanged(this);" value="bfs"></td></tr>
-        <tr><td class="lab_des2">Use Greedy Best First Search</td><td class="lab_rad"><input type="radio" class="inp_rad" name="saMode" onclick="onSearchAlgoOptionChanged(this);" value="gbf" checked></td></tr>
-        <tr><td class="lab_des2">Use Uniform Cost Search</td><td class="lab_rad"><input type="radio" class="inp_rad" name="saMode" onclick="onSearchAlgoOptionChanged(this);" value="ucs"></td></tr>
-        <tr><td class="lab_des2">Use A* Search (GBF+UCS)</td><td class="lab_rad"><input type="radio" class="inp_rad" name="saMode" onclick="onSearchAlgoOptionChanged(this);" value="a*"></td></tr>
-      </table>
-      -->
+
     </div></div></div>
+
+    <p id="ghettoMapText"></p>
+
   </body>
 </html>

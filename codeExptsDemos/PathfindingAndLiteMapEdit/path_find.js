@@ -1,10 +1,5 @@
 /*======================================================================
 |>>> Class SearchNode
-+-----------------------------------------------------------------------
-| Overview: Implements representation of a map cell WRT its pathfinding
-|           state; specifically its travel cost (i.e. from some 'start'
-|           cell), heuristic cost (i.e. towards some 'goal' cell), and
-|           the cell which first discovered it.
 +=====================================================================*/
 class SearchNode{
   // Comparator Method, as passed to Priority Queue for it to use
@@ -28,64 +23,10 @@ class SearchNode{
 } // Ends Class SearchNode
 
 /*======================================================================
-|>>> Class Pathfinder
-+-----------------------------------------------------------------------
-| Overview: Computes (for ground units) cell-to-cell shortest paths upon
-|           current the GameMap via utilizing one of three (maybe four)
-|           pathfinding search algorithms, as follows:
-|             > [BFS] Breadth-First Search: Uninformed algorithm which
-|               simply 'contours out' from source cell until finding the
-|               goal cell (A/A);
-|             > [GBF] Greedy Best-First: Informed algorithm which, when
-|               exploring the frontier, simply (keeps on) selecting the
-|               neighbor/adjacent cell closest to the goal cell (A/A)
-|             > [UCS] Uniform Cost Search: AKA 'Dijkstras Algorithm with
-|               a goal', this uninformed search is basically a variant
-|               of BFS in which cell traversal costs are summed and put
-|               into consideration via placement into a Priority Queue.
-|             > [A*] A-Star: Informed algorithm which is effectively if
-|               not explicitly [UCS] plus [GBF], 'Nuff Said. (actually,
-|               there's more to say WRT how I [re]figure out and ideally
-|               fine-tune an optimal heuristic, but let's KISS for now).
-|          Finally, note that [UCS] and [A*] will place map cell costs 
-|          into consideration, [GBF] and [A*] will place heuristic costs
-|          based on [relative] distances to goal into consideration, and
-|          ALL algorithms will be hardcoded to consider [WATER] (water)
-|          tiles [IMPASSIBLE] and thus never considered in any case.
-+-----------------------------------------------------------------------
-|> Data Structure Notes:
-|   o The Open Set requires a Priority Queue (at least for UCS, A*, and
-|     possibly GBF {it's been a long night}); as to enqueue SearchNode
-|     objects WRT their cost and/xor heuristic values. Thankfully, via
-|     Eyas Ranjous' code: I have one which is nicely reduced for this.
-|   o The Closed Set requires lookup that's as speedy as possible; which
-|     I'll implement via a native JavaScript Map object; as experiments
-|     with them in BG-III 'Spatial Partition Demo' have more than proven
-|     their efficiency and performance superior to naive/other methods.
-+-----------------------------------------------------------------------
-| [AS-YOU-BUILD] Implementation Notes:
-|  > I'm still a bit concerned about clearing and reinitializing up to
-|    cellsWide*cellsTall SearchNodes for every requested path; which is
-|    why the A* P5JS version implemented via Shiffman's video thereof
-|    works with the same collection of SearchNodes. I plan to do a few
-|    simple stress tests to see how heavily pathfind requests hit WRT
-|    alloc/dealloc alongside general computation given the use of two
-|    new data structures for the open and closed sets; but if a problem
-|    is nonetheless found, known solutions include:
-|      (1) 'Only-Init-Once' SearchNodes, one for each map cell, as seen
-|          via aforementioned A* version (which now only exists within
-|          the BG/ZAC project 'GridWalker').
-|      (2) Utilize Object Pooling for SearcNodes, which is effectively a
-|          'lazier' version of the 'Only-Init-Once' version; in that I'm
-|          not assigning one per cell, forever.
-|  > If the alloc/dealloc of all necessary SearchNodes per path request
-|    does NOT yield a noticeable FPS and/or memory hit during my initial
-|    stress test experiments: then freaking KISS and don't worry about
-|    implementing the above; as (1) permanently exists within Gridwalker
-|    and (2) is described right above here for any future reference.   
+|>>> Class Pathfinder  
 +=====================================================================*/
 
-var PathAlgo = {'BFS':1,'GBF':2,'UCS':3,'AST':4};
+var PathAlgo = {'BFS':1,'GBF':2,'UCS':3,'AST':4, keyViaVal(val){return Object.keys(PathAlgo).find(k=>{return PathAlgo[k]==val;})}}
 var PathHeur = {'EUC':1,'MAN':2}; // [EUC]=>[Euclidean] | [MAN]=>Manhattan
 
 class PathFinder{
@@ -99,6 +40,7 @@ class PathFinder{
 
   } // Ends Constructor
 
+
   // Called before a new path is computed
   resetState(){
     this.openSet.clear();
@@ -106,8 +48,10 @@ class PathFinder{
     this.curCost = 0;
   }
 
-  setAlgo(algo){if(Object.values(PathAlgo).includes(algo)){this.curAlgo = algo;}}
 
+  setAlgo(algo){
+    this.curAlgo = PathAlgo[algo];
+  }
 
 
   // Returns coord of input adjacency WRT input coord via Direction 'enum' (and MUCH NICER than orig PathfindingProcessing version!)

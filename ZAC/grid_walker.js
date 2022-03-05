@@ -22,9 +22,9 @@
 |######## Zed Alert i.e. ZAC Concept/Code[base] © Steven Eiselen #######
 +=====================================================================*/
 class GridWalker{
-  constructor(row,col,len,map,pfd){
+  constructor(row,col,len,sp_map,pfd){
     //> Map/Pathfinder Refs (NOTE: Searches by 'Standard Names' first 
-    this.map   = (map) ? map : (typeof gridMap !== 'undefined' && gridMap)  ? gridMap  : null;
+    this.map   = (sp_map) ? sp_map : (typeof gridMap !== 'undefined' && gridMap)  ? gridMap  : null;
     this.pFind = (pfd) ? pfd : (typeof pathFind !== 'undefined' && pathFind) ? pathFind : null;
     //> Transform Info
     this.pos = createVector(col*this.map.cellSize+(this.map.cellSize/2),row*this.map.cellSize+(this.map.cellSize/2));
@@ -219,6 +219,7 @@ class GridWalker{
   handleReroute(){
     //> if curLACell i.e. 'P_c+1' is not null and curLACell is [OCCUPIED] ==>
     if(this.curLACell != null && this.map.isCellOccupied(this.curLACell)){
+      console.log("Should not get here");
       //> if (c+1 == curPath.length-1) i.e. path ends at 'P_c+1' ==> remove P_c+1, then return ∎
       if(this.curWaypt+2 == this.curPath.length){
         this.curPath.pop(); 
@@ -229,7 +230,7 @@ class GridWalker{
       //> else ==> find the first path cell whose SP status is [VACANT], starting from P_c+2 (i.e. find 'P_v')
       let cellV_idx = -1;
       for (let i=this.curWaypt+1; i<this.curPath.length; i++) {
-        if(this.map.isCellVacant(this.map.cellViaPos(this.curPath[i]))){
+        if(this.map.isCellVacant(this.map.posToCoord(this.curPath[i]))){
           cellV_idx=i; 
           break;
         }
@@ -243,8 +244,8 @@ class GridWalker{
       }
 
       //> get the path from P_c to P_v; which will encompass the new: (P_c,⋯,P_v]
-      let pathCell_c  = this.map.cellViaPos(this.curPath[this.curWaypt]);
-      let pathCell_v  = this.map.cellViaPos(this.curPath[cellV_idx]);
+      let pathCell_c  = this.map.posToCoord(this.curPath[this.curWaypt]);
+      let pathCell_v  = this.map.posToCoord(this.curPath[cellV_idx]);
       let pathReRoute = this.pFind.findPath(pathCell_c,pathCell_v,32);
 
       //> get the path from P_v to P_n, then shift; which will encompass: [P_v+1,⋯,P_n]
@@ -390,8 +391,8 @@ class GridWalker{
   | Overview: TODO
   +-------------------------------------------------------------------*/
   setLookaheadCell(){
-    this.curLACell = (this.curWaypt+1 < this.curPath.length) ? this.map.cellViaPos(this.curPath[this.curWaypt+1]) : null;
-    //if(this.curWaypt+1 < this.curPath.length){this.curLACell = this.map.cellViaPos(this.curPath[this.curWaypt+1]);}
+    this.curLACell = (this.curWaypt+1 < this.curPath.length) ? this.map.posToCoord(this.curPath[this.curWaypt+1]) : null;
+    //if(this.curWaypt+1 < this.curPath.length){this.curLACell = this.map.posToCoord(this.curPath[this.curWaypt+1]);}
     //else{this.curLACell = null;}
   } // Ends Function setLookaheadCell
 
@@ -403,7 +404,7 @@ class GridWalker{
   //####################################################################
   
   inSameCellAsMe(othCell){
-    let myCell = this.map.cellViaPos(this.pos);
+    let myCell = this.map.posToCoord(this.pos);
     return othCell[0]==myCell[0]&&othCell[1]==myCell[1];
   }
 
