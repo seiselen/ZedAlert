@@ -20,11 +20,7 @@ function setup(){
   tileMap   = new TileMap(cellsTall,cellsWide,cellSize);
   pathFind  = new GWPathfinder(tileMap,spMap);
   uiManager = new GWDemoUIManager();
-  uiManager.loadMapAgtConfig(map_04,agt_04);
-
-  //uiManager.createAgent(11,1);
-  //uiManager.createAgent(20,28);
-  //uiManager.createBldg([3,7]);
+  uiManager.loadMapAgtConfig(map_24x32_04 ,agt_24x32_04);
 } // Ends P5JS Function setup
 
 //> ASSUME ORDER COUNTS, ESP. RENDER CALLS, I.E. IT'S [VERY] MUCH INTENDED
@@ -40,7 +36,7 @@ function draw(){
   uiManager.drawCursor();
   spMap.renderMap();
   tileMap.renderGrid(); // doesn't matter who renders it
-  if(pathFind.showOCSet){pathFind.displayBothSets()};
+  uiManager.renderPathFindInfo();
   agents.forEach((a)=>a.render());
   bldgs.forEach((b)=>b.render());
   drawCanvasBorder();
@@ -53,6 +49,8 @@ function mousePressed(){
 function keyPressed(){
   uiManager.onKeyPressed(key);
 } // Ends P5JS UI Function keyPressed
+
+
 
 
 //####################################################################

@@ -4,7 +4,7 @@ class PathFinderUI{
     this.cSize     = cellSize;
     this.ptDiam    = 8;
     this.sourceTok = new DragObject("source",6,4 ).bindPathFindUI(this);
-    this.destinTok = new DragObject("destin",6,25).bindPathFindUI(this);  
+    this.destinTok = new DragObject("destin",31,53).bindPathFindUI(this);  
     // UI 'Interface' State/Functions for Pathfinder System Demonstrator
     this.curPath   = null;  // current generated path (as output from pathFind.findPath(...))
     this.curCSet   = null;  // current Open Set (as copy of that in pathFind object)
@@ -12,6 +12,9 @@ class PathFinderUI{
     this.showPath  = true;  // display Path? (A/A)
     this.showCSet  = false; // display Open Set? (A/A)
     this.showOSet  = false; // display Closed Set? (A/A)
+    // TEMP Debug Stuff (i.e. not intended for user-side UI/UX)
+    this.drawPCell = false;
+    this.curPCell  = 0;
     // Init Calls
     this.initUISubPanel(eltLink);
   }
@@ -60,8 +63,8 @@ class PathFinderUI{
   updateLabels(){
     this.labl_tokSCell.html("["+this.sourceTok.coord+"]");
     this.labl_tokGCell.html("["+this.destinTok.coord+"]");
-    this.labl_pathCost.html(this.pathFind.curCost);
-    this.labl_pathHops.html((this.curPath) ? this.curPath.length : "N/A");
+    this.labl_pathCost.html(this.pathFind.totCost);
+    this.labl_pathHops.html((this.curPath) ? this.curPath.length : "N/A");    
   } // Ends Function updateLabels
 
   pathAction(act){
@@ -98,10 +101,12 @@ class PathFinderUI{
 
   // Exists to assert RENDER CALL order for path-related stuff
   renderPathInfo(){
+    rectMode(CENTER);
+    this.renderClosedSet();
     this.renderOpenSet(); 
-    this.renderClosedSet(); 
-    this.renderPath(); 
+    this.renderPath2(); 
     this.renderTokens();
+    rectMode(CORNER);
   } // Ends Function renderPathInfo
 
   renderPath(){
@@ -126,15 +131,15 @@ class PathFinderUI{
     if(!this.curCSet || !this.showCSet){return;}
     stroke(60);fill(255,255,0); // (216, 120, 0)
     push(); translate(this.ptDiam,this.ptDiam);
-    for (let i=0; i<this.curCSet.length; i++){ellipse(this.curCSet[i][1]*this.cSize, this.curCSet[i][0]*this.cSize, this.ptDiam, this.ptDiam);}
+    for (let i=0; i<this.curCSet.length; i++){rect(this.curCSet[i][1]*this.cSize, this.curCSet[i][0]*this.cSize, this.ptDiam, this.ptDiam);}
     pop();
   } // Ends Function renderClosedSet
 
   renderOpenSet(){
     if(!this.curOSet || !this.showOSet){return;}
-    stroke(60);fill(0,255,0);
+    stroke(60);fill(0,255,32);
     push(); translate(this.ptDiam,this.ptDiam);
-    for (let i=0; i<this.curOSet.length; i++){ellipse(this.curOSet[i][1]*this.cSize, this.curOSet[i][0]*this.cSize, this.ptDiam, this.ptDiam);}
+    for (let i=0; i<this.curOSet.length; i++){rect(this.curOSet[i][1]*this.cSize, this.curOSet[i][0]*this.cSize, this.ptDiam, this.ptDiam);}
     pop();
   } // Ends Function renderOpenSet
 

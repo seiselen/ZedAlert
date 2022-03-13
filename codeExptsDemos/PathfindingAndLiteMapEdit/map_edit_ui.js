@@ -72,9 +72,9 @@ class MapEditUI {
 
   onLoadMapDialogue(){
     if (confirm("Load An Existing Map ? (Via Text Input Of Name)")){
-      let name = prompt("Enter Map Name/ID (As Assigned In 'MapDefs' Object)","???");
-      let mapDef = MapDefs[name]; 
-      if(mapDef){myMap.loadMap(mapDef); alert("Map Should Load On Pressing [OK]")} else{alert("Cannot Find Map");}
+      let name = prompt("Enter Map Name/ID (As Assigned In 'map_defs' source)","???");
+      let mapDef = name;
+      if(mapDef){myMap.loadMap(eval(mapDef)); alert("Map Should Load On Pressing [OK]")} else{alert("Cannot Find Map");}
     }
     this.dirtyBitConfirm = true;
   } // Ends Function onLoadMapDialogue

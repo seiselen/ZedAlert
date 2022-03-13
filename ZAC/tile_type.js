@@ -16,12 +16,12 @@ var TileType = {
   WATER:  5,
   ERROR: -1,
 
-  cost : (ID)=>{ switch(ID){             // | *V2* | *V3* |
+  cost : (ID)=>{ switch(ID){           // | *V2* | *V3* |
     case TileType.ROAD  : return 1;    // |    1 |  0.5 |
-    case TileType.PAVE  : return 2;    // |    1 |  0.8 |
-    case TileType.DIRT  : return 16;   // |    2 |  1.0 |
-    case TileType.GRASS : return 32;   // |    3 |  2.0 |
-    case TileType.SAND  : return 64;   // |    4 |  4.0 |
+    case TileType.PAVE  : return 1;    // |    1 |  0.8 |
+    case TileType.DIRT  : return 2;    // |    2 |  1.0 |
+    case TileType.GRASS : return 3;    // |    3 |  2.0 |
+    case TileType.SAND  : return 4;    // |    4 |  4.0 |
     case TileType.WATER : return 1024; // | 1024 | 64.0 |
     default: return 9999;
   }},

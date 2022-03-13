@@ -22,10 +22,11 @@
 class GWDemoUIManager{
   constructor(){
     //> State Variable Inits
-    this.selAgent = null;
-    this.curMode  = "agent";
-    this.paintOpt = "DIRT";
-    this.agentOpt = "sel";
+    this.selAgent  = null;
+    this.curMode   = "agent";
+    this.paintOpt  = "DIRT";
+    this.agentOpt  = "sel";
+    this.showOCSet = true;
     //> Init/Loader Calls
     this.initUI();
   }
@@ -43,8 +44,8 @@ class GWDemoUIManager{
     this.pntOpts         = document.getElementsByName('pnt');
 
     //> Synch checkboxes with at-init vals of corresponding vars
-    this.cBox_showOCSets.elt.checked = pathFind.showOCSet;
-    this.cBox_showOCSets.changed(()=>{pathFind.showOCSet = this.cBox_showOCSets.checked()});
+    this.cBox_showOCSets.elt.checked = this.showOCSet;
+    this.cBox_showOCSets.changed(()=>{this.showOCSet = this.cBox_showOCSets.checked()});
     
     spMap.showGrid = false; // will be using tile_map to render grid, so unflag for sp_map
     this.cBox_showGrid.elt.checked = tileMap.showGrid;
@@ -175,6 +176,23 @@ class GWDemoUIManager{
       }
     pop();
   } // Ends Function drawCursor
+
+
+  renderPathFindInfo(){if(this.showOCSet){this.displayBothSets()};}
+
+  displayBothSets(){ellipseMode(CENTER);this.showOpenSet();this.showClosedSet();this.drawPath();}
+  showClosedSet(){for(let i=0; i<pathFind.closedSet.length; i++){pathFind.closedSet[i].render(color(255,120,0));}}
+  showOpenSet(){for(let i=0; i<pathFind.openSet.length; i++){pathFind.openSet[i].render(color(0,255,0));}}
+  drawPath(){
+      if(pathFind.lastPath.length>0){
+        noFill();stroke(0,180,255,96);strokeWeight(cellSize/2);
+        beginShape();for(let i=0; i<pathFind.lastPath.length; i++){vertex(pathFind.lastPath[i].x,pathFind.lastPath[i].y);}endShape();
+        stroke(255);strokeWeight(1);textSize(12);
+        for(let i=0; i<pathFind.lastPath.length; i++){text(i,pathFind.lastPath[i].x,pathFind.lastPath[i].y);}
+      }
+  }
+
+
 
 } // Ends Class GWDemoUIManager
 

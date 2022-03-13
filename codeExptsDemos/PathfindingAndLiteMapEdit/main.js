@@ -14,6 +14,9 @@ function setup(){
   mapEditUI  = new MapEditUI(mapEdit,"#paintOptions");
   // WARNING: ALL DEPENDENCIES MUST BE INIT'D BEFORE CALLING THIS!
   initUI();
+
+
+  myMap.loadMap(map_48x64_02);
 }
 
 function draw(){
@@ -29,7 +32,7 @@ function draw(){
 
 function keyPressed(){
   key = key.toLowerCase();
-  if(key=='g'){onToggleShowGrid();}
+  if(key=='g'){myMap.toggleShowGrid();}
 }
 
 function mousePressed(){
@@ -56,7 +59,6 @@ function onMouseDown(){
 function mouseWheel(event){
   mapEditUI.onMouseWheel(event);
 } // Ends Function mouseWheel
-
 
 
 /*======================================================================

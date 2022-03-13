@@ -8,6 +8,10 @@
 | Sources:  > Ranjous Heap:  github.com/datastructures-js/heap
 |           > Ranjous Pri-Q: github.com/datastructures-js/priority-queue
 | Language: JavaScript
+| Requires: link in html index/header to 'utils.js' within the BROADGATE 
+|           repo for the <arr2Equals> function, else copy-paste its code
+|           into this class locally; whatever floats your boat. The addr
+|           is: <https://seiselen.github.io/PROJECT-BROADGATE/utils.js>
 +-----------------------------------------------------------------------
 | Notes On Source / Derivation Thereof: 
 |  > This class implements a reduced and merged version of Eyas Ranjous
@@ -84,8 +88,15 @@ class PriorityQueue {
     while (this.shouldSwap(pIdx, cIdx)){this.swap(pIdx, cIdx); pIdx=cIdx; cIdx=this.compareChildren(pIdx);}
   }
 
-  clear(){this.nodes = []; this.leaf = null;}
+  swap(p,q){const temp=this.nodes[p]; this.nodes[p]=this.nodes[q]; this.nodes[q]=temp;}
 
-  swap(p,q){const temp=this.nodes[p]; this.nodes[p]=this.nodes[q]; this.nodes[q]=temp;}  
+  has(coord){return -1 != this.nodes.findIndex(node=>arr2Equals(node.coord,coord));}
+  idx(coord){return this.nodes.findIndex(node=>arr2Equals(node.coord,coord));}
+
+  //> USE THESE *ONLY* WHEN THIS INSTANCE WILL ACT *ONLY* AS A REGULAR QUEUE (i.e. for ZAC Pathfind BFS mode)
+  push(element){this.nodes.push(element);}
+  pop(){return this.nodes.shift();}
+
+  clear(){this.nodes = []; this.leaf = null;}
 
 } // Ends Class PriorityQueue
