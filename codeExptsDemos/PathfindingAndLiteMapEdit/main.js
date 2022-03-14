@@ -16,7 +16,7 @@ function setup(){
   initUI();
 
 
-  myMap.loadMap(map_48x64_02);
+  myMap.loadMap(map_48x64_03);
 }
 
 function draw(){

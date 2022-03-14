@@ -128,6 +128,77 @@ function moveToCurTar(){
 } // Ends Function moveToCurTar
 
 
+
+
+
+
+/*----------------------------------------------------------------------
+|>>> Function PathFinder.findPath
++-----------------------------------------------------------------------
+|> Overview: This was a revised version of an original which was derived
+|            from the since deleted 'PathfindingProcessing' demo. As can
+|            be seen: this method converges all 4 pathfinding algorithms
+|            into a single common form, s.t. the only differences are in
+|            assignment of search node values. It is also now obsolete
+|            and deficient, as: (1) BFS does not function properly; (2)
+|            UCS and A* nodes are NOT updated whenever rediscovered with
+|            lower costs; and (3) the new method consistently produces
+|            lower-cost paths, while its open and closed set sizes are
+|            mostly equivalent, often significantly smaller, and rarely
+|            slightly larger than sets produced by the old method (the
+|            differences mostly WRT the particulars i.e. the algorithm,
+|            map, etc.) Keeping here for OCD and 'backup to the backup'
+|            purposes (though mostly the former, as I can always visit
+|            the repo history). 
++---------------------------------------------------------------------*/
+function findPath(start,goal,midPts=false){
+  this.resetState();    
+  this.curNode = this.nodeMap[start[0]][start[1]];
+  this.curNode.gScore = 0;
+  this.curNode.hScore = this.heurDist(this.curNode.coord, goal);
+  this.oSet.enqueue(this.curNode);
+  this.cSet.set(this.curNode.coord.toString(), this.curNode);
+
+  while(!this.oSet.isEmpty() && this.secCount<PathFinder.secLimit){  
+    this.curNode = this.oSet.dequeue();
+    if(arr2Equals(this.curNode.coord,goal)){this.goalFound = true; break;}
+    
+    for(let i=0; i<8; i++){
+      this.adjCoord = this.coordViaAdj(this.curNode.coord,i);
+
+      if(this.ttMap.cellInBounds(this.adjCoord) && !this.cSet.has(this.adjCoord.toString()) && this.ttMap.getValueAt(this.adjCoord)!=TileType.WATER && this.validateSP()){
+        this.adjNode        = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
+        this.tempCost       = this.curNode.gScore + (this.ttMap.getCostAt(this.adjCoord)*this.adjNode.getDiagFact(i));
+        this.adjNode.parent = this.curNode;
+
+        switch(this.curAlgo){
+          case PathFinder.Algo.AST : this.adjNode.gScore = this.tempCost; this.adjNode.hScore = this.heurDist(this.adjCoord, goal); break;
+          case PathFinder.Algo.UCS : this.adjNode.gScore = this.tempCost; this.adjNode.hScore = 0; break;
+          case PathFinder.Algo.GBF : this.adjNode.hScore = this.heurDist(this.adjCoord, goal); break;
+        } // Ends Switch
+
+        this.oSet.enqueue(this.adjNode);
+        this.cSet.set(this.adjCoord.toString(), this.adjNode);
+      }
+    } // Ends For Loop
+    this.secCount++;
+  } // Ends While Loop
+
+  this.summaryToConsole(this.goalFound);
+  return this.constructPath(this.curNode, midPts);
+} // Ends Function findPath
+
+
+
+
+
+
+
+
+
+
+
+
 /*----------------------------------------------------------------------
 |>>> 'Dict' Colors
 +-----------------------------------------------------------------------

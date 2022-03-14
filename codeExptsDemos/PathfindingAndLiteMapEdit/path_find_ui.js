@@ -3,8 +3,8 @@ class PathFinderUI{
     this.pathFind  = pFind;
     this.cSize     = cellSize;
     this.ptDiam    = 8;
-    this.sourceTok = new DragObject("source",6,4 ).bindPathFindUI(this);
-    this.destinTok = new DragObject("destin",31,53).bindPathFindUI(this);  
+    this.sourceTok = new DragObject("source",45,56).bindPathFindUI(this);
+    this.destinTok = new DragObject("destin",13,43).bindPathFindUI(this);  
     // UI 'Interface' State/Functions for Pathfinder System Demonstrator
     this.curPath   = null;  // current generated path (as output from pathFind.findPath(...))
     this.curCSet   = null;  // current Open Set (as copy of that in pathFind object)
@@ -12,9 +12,6 @@ class PathFinderUI{
     this.showPath  = true;  // display Path? (A/A)
     this.showCSet  = false; // display Open Set? (A/A)
     this.showOSet  = false; // display Closed Set? (A/A)
-    // TEMP Debug Stuff (i.e. not intended for user-side UI/UX)
-    this.drawPCell = false;
-    this.curPCell  = 0;
     // Init Calls
     this.initUISubPanel(eltLink);
   }
@@ -72,7 +69,9 @@ class PathFinderUI{
   } // Ends Function pathAction
 
   launchPath(){
-    this.curPath = pathFind.findPath(this.sourceTok.coord,this.destinTok.coord); this.curCSet = pathFind.getClosedSet(); this.curOSet = pathFind.getOpenSet();
+    this.curPath = pathFind.findPath(this.sourceTok.coord,this.destinTok.coord); 
+    this.curCSet = pathFind.getClosedSet(); 
+    this.curOSet = pathFind.getOpenSet();
   } // Ends Function launchPath
 
   clearPath(){

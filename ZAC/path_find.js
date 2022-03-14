@@ -26,6 +26,7 @@ class PathFinder{
   static Heur = {'EUC':'e', "MAN":'m'}
   static secLimit = 10000;
 
+
   constructor(tt, sp){
     this.ttMap     = tt;
     this.spMap     = sp;
@@ -34,11 +35,12 @@ class PathFinder{
     this.cellSize  = tt.cellSize;
     this.curHeur   = PathFinder.Heur.EUC;
     this.curAlgo   = PathFinder.Algo.AST;
-    this.hScaleFct = TileType.cost(TileType.DIRT);
+    this.hScaleFct = TileType.cost(TileType.ROAD);
 
     this.totCost   = 0; // total cost of path currently being found    
     this.tempCost  = 0; // temp cost, as to compare with current shortest (A/A)
     this.secCount  = 0; 
+    this.goalFound = false;
     this.oSet      = new PriorityQueue((p,q)=>(SearchNode.compare(p,q)));
     this.cSet      = new Map();
     this.curCoord  = null; 
@@ -50,7 +52,6 @@ class PathFinder{
   } // Ends Constructor
 
 
-  // Inits Search Node Graph
   initNodeMap(){
     this.nodeMap = [];    
     for(let r=0; r<this.cellsTall; r++){
@@ -70,9 +71,7 @@ class PathFinder{
 
 
   resetNodeVals(node){
-    node.gScore = Number.MAX_SAFE_INTEGER;
-    node.hScore = Number.MAX_SAFE_INTEGER;
-    node.parent   = null;
+    node.gScore = Number.MAX_SAFE_INTEGER; node.hScore = Number.MAX_SAFE_INTEGER; node.parent = null;
   } // Ends Function resetNodeVals
 
 
@@ -82,6 +81,7 @@ class PathFinder{
     this.oSet.clear();
     this.cSet.clear();
     this.secCount  = 0;
+    this.goalFound = false;
     this.totCost   = 0;
     this.tempCost  = 0;
     this.curCoord  = null; 
@@ -96,21 +96,10 @@ class PathFinder{
   } // Ends Function setAlgo
 
 
-  // Returns coord of input adjacency WRT input coord via Direction 'enum' (and MUCH NICER than orig PathfindingProcessing version!)
-  coordViaAdj(coord, adj){
-    switch(adj){
-      case Direction.N  : return [coord[0]-1, coord[1],   1];          //  [N]=>[8]
-      case Direction.S  : return [coord[0]+1, coord[1],   1];          //  [S]=>[4]
-      case Direction.E  : return [coord[0],   coord[1]+1, 1];          //  [E]=>[2]
-      case Direction.W  : return [coord[0],   coord[1]-1, 1];          //  [W]=>[6]
-      case Direction.NE : return [coord[0]-1, coord[1]+1, Math.SQRT2]; // [NE]=>[1]
-      case Direction.SE : return [coord[0]+1, coord[1]+1, Math.SQRT2]; // [SE]=>[3]
-      case Direction.NW : return [coord[0]-1, coord[1]-1, Math.SQRT2]; // [SW]=>[7]
-      case Direction.SW : return [coord[0]+1, coord[1]-1, Math.SQRT2]; // [NW]=>[5]
-      // Crappy Input Neighborhood :-)
-      default: console.log("ERROR! Invalid Direction Input!"); return[-1,-1];
-    } // Ends Switch
-  } // Ends Function coordViaAdj
+  // currently unused as the original def is still in the SearchNode class def
+  getDiagFact(i){
+    return (i<4) ? 1 : Math.SQRT2;
+  }
 
 
   // Cool use of Short-Circuit {OR}
@@ -167,22 +156,25 @@ class PathFinder{
   }
 
 
-
   findPath(start,goal,midPts=false){
     this.resetState();
-    let goalFound = false;
-    // create search node WRT current pathfinding algorithm
+
     switch(this.curAlgo){
-      case PathFinder.Algo.BFS : goalFound = this.findPathBFS(start,goal); break;
-      case PathFinder.Algo.GBF : goalFound = this.findPathGBF(start,goal); break;
-      case PathFinder.Algo.UCS : goalFound = this.findPathUCS(start,goal); break;      
-      case PathFinder.Algo.AST : goalFound = this.findPathAST(start,goal); break;      
+      case PathFinder.Algo.BFS : this.findPathBFS(start,goal); break;
+      case PathFinder.Algo.GBF : this.findPathGBF(start,goal); break;
+      case PathFinder.Algo.UCS : this.findPathUCS(start,goal); break;      
+      case PathFinder.Algo.AST : this.findPathAST(start,goal); break;      
     }
 
-    this.summaryToConsole(goalFound);
+    this.summaryToConsole(this.goalFound);
 
     return this.constructPath(this.curNode, midPts);
   } // Ends Function findPath
+
+
+  commonValidTests(){
+    return this.ttMap.cellInBounds(this.adjCoord) && this.ttMap.getValueAt(this.adjCoord)!=TileType.WATER && this.validateSP();
+  }
 
 
   findPathBFS(start, goal){
@@ -192,18 +184,19 @@ class PathFinder{
 
     while(!this.oSet.isEmpty() && this.secCount<PathFinder.secLimit){
       this.curNode = this.oSet.pop();
-      if(arr2Equals(this.curNode.coord, goal)){return true;}
+      if(arr2Equals(this.curNode.coord, goal)){this.goalFound = true; break;}
       for(let i=0; i<8; i++){
         this.adjCoord = this.curNode.adjCoords[i];
-        if(!this.ttMap.cellInBounds(this.adjCoord) || this.cSet.has(this.adjCoord.toString()) || this.ttMap.getValueAt(this.adjCoord)==TileType.WATER || !this.validateSP()){continue;}
-        this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
-        this.adjNode.parent = this.curNode;
-        this.cSet.set(this.adjCoord.toString(), this.adjNode);
-        this.oSet.push(this.adjNode);
+        if(this.commonValidTests() && !this.cSet.has(this.adjCoord.toString())){
+          this.adjNode        = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
+          this.adjNode.parent = this.curNode;
+          this.cSet.set(this.adjCoord.toString(), this.adjNode);
+          this.oSet.push(this.adjNode);
+        }
       } // Ends For Loop
       this.secCount++;
     } // Ends While Loop
-    return false;
+    return;
   } // Ends Function findPathBFS
 
 
@@ -212,30 +205,26 @@ class PathFinder{
     this.curNode.gScore = 0;
     this.curNode.hScore = this.heurDist(this.curNode.coord,goal);
     this.oSet.enqueue(this.curNode);
+    this.cSet.set(this.curNode.coord.toString(), this.curNode);    
 
     while(!this.oSet.isEmpty() && this.secCount<PathFinder.secLimit){
       this.curNode = this.oSet.dequeue();
-      if(arr2Equals(this.curNode.coord, goal)){return true;}
-      if(this.cSet.has(this.curNode.coord.toString())){continue;}
-      this.cSet.set(this.curNode.coord.toString(), this.curNode);
+      if(arr2Equals(this.curNode.coord, goal)){this.goalFound = true; break;}
 
       for(let i=0; i<8; i++){
         this.adjCoord = this.curNode.adjCoords[i];
-
-        if( !this.ttMap.cellInBounds(this.adjCoord) || 
-            this.cSet.has(this.adjCoord.toString()) || this.oSet.has(this.adjCoord) || //> TODO: Test if these two are [still] needed???
-            this.ttMap.getValueAt(this.adjCoord)==TileType.WATER || !this.validateSP()){
-          continue;
+        if(this.commonValidTests() && !this.cSet.has(this.adjCoord.toString())){
+          this.adjNode        = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
+          this.adjNode.parent = this.curNode;
+          this.adjNode.gScore = 0;        
+          this.adjNode.hScore = this.heurDist(this.adjCoord, goal);
+          this.oSet.enqueue(this.adjNode);
+          this.cSet.set(this.adjCoord.toString(), this.adjNode);
         }
-
-        this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
-        this.adjNode.parent = this.curNode;
-        this.adjNode.hScore = this.heurDist(this.adjCoord, goal);
-        this.oSet.enqueue(this.adjNode);
       } // Ends For Loop
       this.secCount++;
     } // Ends While Loop
-    return false;
+    return;
   } // Ends Function findPathGBF
 
 
@@ -244,39 +233,37 @@ class PathFinder{
     this.curNode.gScore = 0;    
     this.curNode.hScore = 0;
     this.oSet.enqueue(this.curNode);
-    this.cSet.set(this.curNode.coord.toString(), this.curNode);
 
     while(!this.oSet.isEmpty() && this.secCount<PathFinder.secLimit){
       this.curNode = this.oSet.dequeue();
-      if(arr2Equals(this.curNode.coord,goal)){return true;}
-      //if(this.cSet.has(this.curNode.coord.toString())){ console.log("hi"); continue;}
-      //this.cSet.set(this.curNode.coord.toString(), this.curNode);
+      if(arr2Equals(this.curNode.coord,goal)){this.goalFound = true; break;}
+      this.cSet.set(this.curNode.coord.toString(), this.curNode);
 
       for(let i=0; i<8; i++){
         this.adjCoord = this.curNode.adjCoords[i];
 
-        if(!this.ttMap.cellInBounds(this.adjCoord) || this.ttMap.getValueAt(this.adjCoord)==TileType.WATER || !this.validateSP()){continue;}
+        if(this.commonValidTests()){
 
-        this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
-        this.tempCost = this.curNode.gScore + (this.ttMap.getCostAt(this.adjCoord)*this.adjNode.getDiagFact(i));
+          this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
+          this.tempCost = this.curNode.gScore + (this.ttMap.getCostAt(this.adjCoord)*this.adjNode.getDiagFact(i));
 
-        if(!this.cSet.has(this.adjCoord.toString()) && !this.oSet.has(this.adjCoord)){
-          this.adjNode.parent = this.curNode;
-          this.adjNode.gScore = this.tempCost;
-          this.adjNode.hScore = 0;
-          this.oSet.enqueue(this.adjNode);
-          this.cSet.set(this.adjCoord.toString(), this.adjNode); 
-        }
-        else if (this.oSet.has(this.adjCoord) && this.tempCost < this.adjNode.gScore){
-          this.adjNode.parent = this.curNode;
-          this.adjNode.gScore = this.tempCost;
-          this.adjNode.hScore = 0;
+          if(!this.cSet.has(this.adjCoord.toString()) && !this.oSet.has(this.adjCoord)){
+            this.adjNode.parent = this.curNode;
+            this.adjNode.gScore = this.tempCost;
+            this.adjNode.hScore = 0;
+            this.oSet.enqueue(this.adjNode);
+          }
+          else if (this.oSet.has(this.adjCoord) && this.tempCost < this.adjNode.gScore){
+            this.adjNode.parent = this.curNode;
+            this.adjNode.gScore = this.tempCost;
+            this.adjNode.hScore = 0;
+          }
         }
 
       } // Ends For Loop
       this.secCount++;
     } // Ends While Loop
-    return false;
+    return;
   } // Ends Function findPathUCS
 
 
@@ -285,81 +272,39 @@ class PathFinder{
     this.curNode.gScore = 0;
     this.curNode.hScore = this.heurDist(this.curNode.coord, goal);
     this.oSet.enqueue(this.curNode);
-    this.cSet.set(this.curNode.coord.toString(), this.curNode);
 
     while(!this.oSet.isEmpty() && this.secCount<PathFinder.secLimit){
       this.curNode = this.oSet.dequeue();
-      if(arr2Equals(this.curNode.coord,goal)){return true;}
-      //if(this.cSet.has(this.curNode.coord.toString())){ console.log("hi"); continue;}
-      //this.cSet.set(this.curNode.coord.toString(), this.curNode);
+      if(arr2Equals(this.curNode.coord,goal)){this.goalFound = true; break;}
+      this.cSet.set(this.curNode.coord.toString(), this.curNode);
 
       for(let i=0; i<8; i++){
         this.adjCoord = this.curNode.adjCoords[i];
 
-        if(!this.ttMap.cellInBounds(this.adjCoord) || this.cSet.has(this.adjCoord.toString()) || this.ttMap.getValueAt(this.adjCoord)==TileType.WATER || !this.validateSP()){continue;}
+        if(this.commonValidTests()){
+          this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
+          this.tempCost = this.curNode.gScore + (this.ttMap.getCostAt(this.adjCoord)*this.adjNode.getDiagFact(i));
 
-        this.adjNode = this.nodeMap[this.adjCoord[0]][this.adjCoord[1]];
-        this.tempCost = this.curNode.gScore + (this.ttMap.getCostAt(this.adjCoord)*this.adjNode.getDiagFact(i));
-
-        if(this.oSet.has(this.adjCoord)){
-          if (this.tempCost < this.adjNode.gScore){
-            this.adjNode.gScore = this.tempCost;
-            this.adjNode.hScore = this.heurDist(this.adjCoord, goal);
-            this.adjNode.parent = this.curNode;
-            this.oSet.heapifyUp(this.oSet.idx(this.adjCoord));                    
-          }
-        }
-        else{
+          if(!this.cSet.has(this.adjCoord.toString()) && !this.oSet.has(this.adjCoord)){
             this.adjNode.gScore = this.tempCost;
             this.adjNode.hScore = this.heurDist(this.adjCoord, goal);
             this.adjNode.parent = this.curNode;
             this.oSet.enqueue(this.adjNode);
-            this.cSet.set(this.adjCoord.toString(), this.adjNode); 
+          }
+          else if (this.oSet.has(this.adjCoord) && this.tempCost < this.adjNode.gScore){
+            this.adjNode.gScore = this.tempCost;
+            this.adjNode.hScore = this.heurDist(this.adjCoord, goal);
+            this.adjNode.parent = this.curNode;
+            this.oSet.heapifyUp(this.oSet.idx(this.adjCoord));    
+          }
         }
-
       } // Ends For Loop
       this.secCount++;
     } // Ends While Loop
-    return false;
+    return;
   } // Ends Function findPathAST
 
 } // Ends Class PathFinder
-
-
-/*>>> TEMPORARY FOR [HOPEFULLY NOT] AS-NEEDED REFERENCE UNTIL PATHFINDER IS [PROVEN]. THEN COULD THROW IN 'ZAC OLD CODE GRAVEYARD' IF YOU'RE *THAT* OCD ABOUT KEEPING IT...
-  findPath(start,goal){
-    let initHeurDist = this.ttMap.distBetweenCoords(start,goal);
-    let curNode      = new SearchNode(start, 0, initHeurDist, null);
-    let tempSNode    = null;
-
-    this.openSet.enqueue(curNode);
-    this.closedSet.set(curNode.coord.toString(), curNode);
-
-    while(!this.openSet.isEmpty() && this.secCount<PathFinder.secLimit){  
-      curNode = this.openSet.dequeue();
-      if(arr2Equals(curNode.coord,goal)){this.summaryToConsole(true); return;}
-      
-      for(let adj=1; adj<9; adj++){
-        adjCoord = this.coordViaAdj(curNode.coord,adj);
-
-        if(this.ttMap.cellInBounds(adjCoord) && this.closedSet.has(adjCoord.toString()) && this.ttMap.getValueAt(adjCoord)==TileType.WATER && this.validateSP()){
-   
-          switch(this.curAlgo){
-            case PathFinder.Algo.AST : tempSNode = new SearchNode(adjCoord, (curNode.travCost+this.ttMap.getCostAt(adjCoord)), this.ttMap.distBetweenCoords(adjCoord, goal), curNode); break;
-            case PathFinder.Algo.UCS : tempSNode = new SearchNode(adjCoord, (curNode.travCost+ (this.ttMap.getCostAt(adjCoord)*adjCoord[2])), 0, curNode); break;            
-            case PathFinder.Algo.GBF : tempSNode = new SearchNode(adjCoord, 0, this.ttMap.distBetweenCoords(adjCoord, goal), curNode); break;
-            case PathFinder.Algo.BFS : tempSNode = new SearchNode(adjCoord, curNode.travCost+adjCoord[2], 0, curNode); break;            
-          } // Ends Switch
-
-          this.openSet.enqueue(tempSNode);
-          this.closedSet.set(tempSNode.coord.toString(), tempSNode) 
-        }
-      } // Ends For Loop
-      secCount++;
-    } // Ends While Loop    
-    this.summaryToConsole(false);
-  } // Ends Function findPath
-*/
 
 
 
@@ -375,10 +320,10 @@ class PathFinder{
 |            the cell which first discovered it.
 | Variables: > [adjCoords] : [row,col] coords of adjacent cells WRT this
 |            search node (i.e. its neighborhood)
-|            > travCost : AKA 'gScore' encompasses "currently known cost 
+|            > 'gScore' encompasses "currently known cost 
 |              of cheapest path from <start> to <cell>" (i.e. does NOT 
 |              include 'heuristic-dist-from-here-to-goal')
-|            > heurCost : AKA 'fScore' AKA TOTAL score encompasses the 
+|            > 'fScore' AKA TOTAL score encompasses the 
 |              "current best guess for how short path from <start> to 
 |               <goal> could be if going through <cell>"; i.e. it has
 |              the value travCost[cell] + heur(cell).
@@ -392,9 +337,7 @@ class PathFinder{
 +=====================================================================*/
 class SearchNode{
   // Comparator Method, as passed to Priority Queue for it to use
-  static compare(a,b){
-    return Math.sign(a.fScore()-b.fScore());
-  }
+  static compare(a,b){return Math.sign(a.fScore()-b.fScore());}
 
   constructor(loc,g,h,par){
     this.coord  = loc;
@@ -436,9 +379,7 @@ class SearchNode{
     ];
   } // Ends Function initNeighborCoords
 
-  getDiagFact(i){
-    return (i<4) ? 1 : Math.SQRT2;
-  }
+  getDiagFact(i){return (i<4) ? 1 : Math.SQRT2;}
 
   /*----------------------------------------------------------------------
   |>>> Function toString
@@ -448,9 +389,7 @@ class SearchNode{
   |           node's parent than simply that it exists; for which one can
   |           grab the parent's reference and call <toString> thereto.
   +---------------------------------------------------------------------*/
-  toString(){
-    return "SearchNode @ ["+this.coord[0]+","+this.coord[1]+"] => 'G' Score: ["+this.gScore+"] | 'H' Score: ["+this.hScore+"] | has parent: "+ ((this.parent) ? "[yes]" : "[no]");
-  } // Ends Function toString
+  toString(){return "SearchNode @ ["+this.coord[0]+","+this.coord[1]+"] => 'G' Score: ["+this.gScore+"] | 'H' Score: ["+this.hScore+"] | has parent: "+ ((this.parent) ? "[yes]" : "[no]");}
 
   /*----------------------------------------------------------------------
   |>>> Function toConsole 
@@ -459,7 +398,5 @@ class SearchNode{
   |           console 'warn' <vs> 'log'; for no other reason than that it
   |           will appear yellow in Chrome (and other?) browser consoles.
   +---------------------------------------------------------------------*/
-  toConsole(){
-    console.warn(this.toString());
-  } // Ends Function toConsole
+  toConsole(){console.warn(this.toString());}
 } // Ends Class SearchNode
