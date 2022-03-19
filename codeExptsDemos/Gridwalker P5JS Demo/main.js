@@ -18,7 +18,7 @@ function setup(){
   document.oncontextmenu = ()=>{return !mouseInCanvas()}; // FINALLY REALIZED DESIRED BEHAVIOR!
   spMap     = new GridSPMap(cellsTall,cellsWide,cellSize);
   tileMap   = new TileMap(cellsTall,cellsWide,cellSize);
-  pathFind  = new GWPathfinder(tileMap,spMap);
+  pathFind  = new PathFinder(tileMap,spMap);
   uiManager = new GWDemoUIManager();
   uiManager.loadMapAgtConfig(map_24x32_04 ,agt_24x32_04);
 } // Ends P5JS Function setup
@@ -57,7 +57,8 @@ function keyPressed(){
 //>>> QAD BUILDING OBJ DEF
 //####################################################################
 class GWBldg{
-  constructor(r,c,d,m){
+  constructor(r,c,d,m,i){
+    this.ID    = 'b' + ((i==undefined) ? '?' : i);
     this.pos   = createVector(c*cellSize,r*cellSize);
     this.dim   = createVector(d[0]*cellSize, d[1]*cellSize);
     this.cells = this.dimToCells(r,c,d[0],d[1]);

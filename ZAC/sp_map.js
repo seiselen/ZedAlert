@@ -133,10 +133,14 @@ class GridSPMap extends GridMap{
   |              array named 'cells' of which contains 2-tuple [row,col]
   |              coordinate pairs for every cell containing the object;
   |              and that these pairs contain VALID cell coordinates.
-  | DEFICIENCY:  NOT UPDATED TO USE THE MAP JS OBJECT! TODO: REFACTOR!
   +-------------------------------------------------------------------*/
-  postBuilding(obj){obj.cells.forEach((cell)=>this.sparMap[cell[0]][cell[1]]=obj);}
-  pullBuilding(obj){obj.cells.forEach((cell)=>this.sparMap[cell[0]][cell[1]]=null);}
+  postBuilding(obj){
+    obj.cells.forEach((cell)=>this.map[cell[0]][cell[1]].set(obj.ID,obj));
+  }
+
+  pullBuilding(obj){
+    obj.cells.forEach((cell)=>this.map[cell[0]][cell[1]].delete(obj.ID,obj));
+  }
 
 
   /*--------------------------------------------------------------------

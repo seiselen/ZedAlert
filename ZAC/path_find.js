@@ -4,9 +4,48 @@
 | Author:    Steven Eiselen         | Language:  JavaScript 
 | Project:   Zed Alert a.k.a. ZAC   | Library:   P5JS (p5js.org/)
 +-----------------------------------+-----------------------------------
-| Overview/Notes: Relocated to 'ZAC Technical Notes' in OneNote
+| Overview: Given [row,col] coordinates for a source (i.e. start) cell 
+|           and a destination (i.e. goal) cell: computes shortest paths 
+|           WRT the currently bound TileMap and SPMap, via the currently
+|           selected pathfind algorithm. Returns either (1) an array of
+|           [row,col] coordinate pairs corresponding to the path; (2) a
+|           p5.Vector array encompassing cell midpoints corresponding to
+|           the path; xor (3) an empty array if no path was found to the
+|           goal cell. Utilized by ground units in ZAC to get directions
+|           from the cell they are currently located at to another cell,
+|           at minimal travel time; larger TileType costs => slower unit
+|           movement speed therethrough.
+|
+|           Four pathfinding algorithms are supported, described [very]
+|           briefly as follows (while noting A* is the default option at
+|           the present time for obvious reasons):
+|           > [BFS] Breadth-First Search: an uninformed algorithm which
+|             simply 'contours out' from start cell until finding goal 
+|             cell. Does NOT consider travel nor heuristic costs.
+|           > [GBF] Greedy Best-First: nformed algorithm which explores
+|             the cell closest to the goal cell; ergo does NOT consider 
+|             travel costs, but DOES consider heuristic costs.
+|           > [UCS] Uniform Cost Search: uninformed algorithm which is
+|             somewhat an expanded form of BFS. It DOES consider travel 
+|             costs, but NOT heuristic costs.
+|           > [A*] A-Star: informed algorithm which is Effectively (if 
+|             not explicitly) a composite of [UCS] and [GBF]. Ergo it
+|             considers BOTH travel costs AND heuristic costs.
+|
+|           All algorithm methods share the following constraints:
+|           > Cells of TileType [WATER] are NEVER admitted into the open
+|             set (i.e. frontier), ergo are effectively 'invisible' WRT
+|             computing or considering cells for any particular path.
+|           > Cells of spatial partition value [OCCUPIED] are also NEVER
+|             admitted into the open set, to the same effect. This might
+|             change as ZAC continues development, but is TBD for now.
+|
+|           Algorithms utilizing heuristic distance can compute them via
+|           one of the two following methods (most common to this task):
+|           > [EUC] => Euclidean Distance
+|           > [MAN] => Manhattan Distance
 +-----------------------------------------------------------------------
-| [AS-YOU-BUILD] Implementation Notes:
+| Implementation Notes:
 |  > TILE MAP (i.e. 'ttMap') will be primary source for map dims (i.e.
 |    'cellsWide') as well as GridMap functions (i.e. <posToCoord>), as
 |    a valid one MUST always be passed in; whereas SP MAP (i.e. 'spMap')
@@ -25,7 +64,6 @@ class PathFinder{
   static Algo = {'BFS':1,'GBF':2,'UCS':3,'AST':4, keyViaVal(val){return Object.keys(PathFinder.Algo).find(k=>{return PathFinder.Algo[k]==val;})}}
   static Heur = {'EUC':'e', "MAN":'m'}
   static secLimit = 10000;
-
 
   constructor(tt, sp){
     this.ttMap     = tt;
@@ -47,6 +85,8 @@ class PathFinder{
     this.adjCoord  = null;
     this.curNode   = null;
     this.adjNode   = null;
+
+    this.updateUI  = true;
 
     this.initNodeMap();
   } // Ends Constructor
@@ -118,7 +158,6 @@ class PathFinder{
   } // Ends Function heurDist
 
 
-  // THIS RETURNS *COORDS*, I.E. NOT MIDPOINT POSITIONS. Wrap it as parm to call of <constructPathAsMidPts> to get them (for now at least...)
   constructPath(node,midPts=false){
     let path = [];
     this.secCount = 0;
@@ -173,7 +212,7 @@ class PathFinder{
 
 
   commonValidTests(){
-    return this.ttMap.cellInBounds(this.adjCoord) && this.ttMap.getValueAt(this.adjCoord)!=TileType.WATER && this.validateSP();
+    return this.ttMap.cellInBounds(this.adjCoord) && this.ttMap.getValueAt(this.adjCoord)!=TileType.WATER && this.validateSP(this.adjCoord);
   }
 
 
@@ -329,7 +368,6 @@ class PathFinder{
 |              the value travCost[cell] + heur(cell).
 +-----------------------------------------------------------------------
 | [AS-YOU-BUILD] Implementation Notes:
-|  > 'heurCost' => TOTAL COST i.e. 'travCost' + [most recent] heur dist
 |  > Should I prune out-of-bounds coords (A/A) at construction to spare
 |    the <cellInBounds(...)> check within the pathfind algorithms' code?
 +-----------------------------------------------------------------------

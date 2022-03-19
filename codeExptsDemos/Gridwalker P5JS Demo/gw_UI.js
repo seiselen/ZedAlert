@@ -27,6 +27,9 @@ class GWDemoUIManager{
     this.paintOpt  = "DIRT";
     this.agentOpt  = "sel";
     this.showOCSet = true;
+    this.curPath   = [];
+    this.curOSet   = [];
+    this.curCSet   = [];
     //> Init/Loader Calls
     this.initUI();
   }
@@ -109,16 +112,41 @@ class GWDemoUIManager{
   //====================================================================
   //>>> UI AND OTHER ACTIONS
   //====================================================================
-  getMouseCoord(){return tileMap.posToCoord(mousePtToVec());}
-  doAgtOptTask(){switch(this.agentOpt){case 'sel': this.selectAgent(this.getMouseCoord()); return; case 'add': this.createAgent(this.getMouseCoord()); return; case 'rem': this.removeAgent(this.getMouseCoord()); return;}}
-  doAgtPathTask(){if(this.selAgent){this.selAgent.givePath(pathFind.findPath(tileMap.posToCoord(this.selAgent.pos),this.getMouseCoord()));}}
-  doBldgOptTask(){this.createBldg(this.getMouseCoord());}
-  doMapPaintTask(){tileMap.setValueAt(this.getMouseCoord(),TileType[this.paintOpt]);}  
+  getMouseCoord(){
+    return tileMap.posToCoord(mousePtToVec());
+  }
+
+  doAgtOptTask(){
+    switch(this.agentOpt){
+      case 'sel': this.selectAgent(this.getMouseCoord()); return;
+      case 'add': this.createAgent(this.getMouseCoord()); return;
+      case 'rem': this.removeAgent(this.getMouseCoord()); return;
+    }
+  }
+
+  doAgtPathTask(){
+    if(this.selAgent){
+      this.curPath   = pathFind.findPath(tileMap.posToCoord(this.selAgent.pos),this.getMouseCoord(),true); //> true => 'give me midpts as p5.Vectors!'
+      this.curOSet   = pathFind.getClosedSet();
+      this.curCSet   = pathFind.getOpenSet();
+      this.selAgent.givePath(this.curPath);
+    }
+  }
+
+  doBldgOptTask(){
+    this.createBldg(this.getMouseCoord());
+  }
+
+  doMapPaintTask(){
+    tileMap.setValueAt(this.getMouseCoord(),TileType[this.paintOpt]);
+  }  
 
   // dimension FIXED to [3x4] for now, will (obviously) be procedural in the future
   createBldg(coord){
     // MUST check that ALL containing cells are [VACANT] BEFORE instantiating! 
-    if(tileMap.canBuildBldg(coord[0],coord[1],3,4)&&spMap.canBuildBldg(coord[0],coord[1],3,4)){bldgs.push(new GWBldg(coord[0],coord[1],[3,4],spMap));}
+    if(tileMap.canBuildBldg(coord[0],coord[1],3,4)&&spMap.canBuildBldg(coord[0],coord[1],3,4)){
+      bldgs.push(new GWBldg(coord[0],coord[1],[3,4],spMap,bldgs.length));
+    }
     else{console.error("Error! Unable to create building at coord ["+coord+"].");}   
   } // Ends Function createBldg
 
@@ -135,7 +163,7 @@ class GWDemoUIManager{
     // MUST check that desired cell to spawn agent is [VACANT] BEFORE instantiating!
     if(spMap.isCellVacant(coord)){
       agents.push(new GridWalker(coord[0],coord[1],cellSize/2,spMap).setToUsingSP()); 
-      agents[agents.length-1].ID = agents.length;
+      agents[agents.length-1].ID = 'a'+agents.length;
       return;
     }
     console.error("Error! Unable to create agent at coord ["+coord+"].");
@@ -149,6 +177,13 @@ class GWDemoUIManager{
     // THEN, CAN REMOVE AGENT FROM <agents> AND OTHER STUFF (OR FUTURE OBJ POOL RECYCLE WLOG)
     return true; // TEMP so it does something i.e. REMOVE once this is implemented
   } // Ends Function removeAgent
+
+  // debug method called by agent who just computed reroute, gives it to me while I get the 2 sets
+  updatePathInfo(path){
+    this.curPath = path;
+    this.curOSet = pathFind.getClosedSet();
+    this.curCSet = pathFind.getOpenSet();
+  } // Ends Function updatePathInfo
 
   loadMapAgtConfig(mapCfg,agtCfg){
     tileMap.loadMap(mapCfg);
@@ -178,32 +213,42 @@ class GWDemoUIManager{
   } // Ends Function drawCursor
 
 
-  renderPathFindInfo(){if(this.showOCSet){this.displayBothSets()};}
-
-  displayBothSets(){ellipseMode(CENTER);this.showOpenSet();this.showClosedSet();this.drawPath();}
-  showClosedSet(){for(let i=0; i<pathFind.closedSet.length; i++){pathFind.closedSet[i].render(color(255,120,0));}}
-  showOpenSet(){for(let i=0; i<pathFind.openSet.length; i++){pathFind.openSet[i].render(color(0,255,0));}}
-  drawPath(){
-      if(pathFind.lastPath.length>0){
-        noFill();stroke(0,180,255,96);strokeWeight(cellSize/2);
-        beginShape();for(let i=0; i<pathFind.lastPath.length; i++){vertex(pathFind.lastPath[i].x,pathFind.lastPath[i].y);}endShape();
-        stroke(255);strokeWeight(1);textSize(12);
-        for(let i=0; i<pathFind.lastPath.length; i++){text(i,pathFind.lastPath[i].x,pathFind.lastPath[i].y);}
-      }
+  renderPathFindInfo(){
+    this.renderOCSet();
+    this.renderPath2();  
   }
 
+  renderPath(){
+    stroke(60); fill(255);
+    for (let i=0; i<this.curPath.length; i++){ellipse(this.curPath[i].x, this.curPath[i].y, cellSize/2, cellSize/2);}
+  } // Ends Function renderPath
 
+  renderPath2(){
+    noFill();stroke(0,180,255,96);strokeWeight(cellSize/2);textAlign(CENTER,CENTER);
+    beginShape();for(let i=0; i<this.curPath.length; i++){vertex(this.curPath[i].x, this.curPath[i].y);}endShape();
+    fill(255);stroke(0);strokeWeight(0.5);textSize(12);
+    for(let i=0; i<this.curPath.length; i++){text(i+1,this.curPath[i].x, this.curPath[i].y);}
+  } // Ends Function renderPath2
+
+  renderOCSet(){
+    if(this.showOCSet){
+      rectMode(CENTER);
+      push(); 
+      translate(cellSize/2,cellSize/2);
+      stroke(60);   
+      this.renderClosedSet();
+      this.renderOpenSet(); 
+      pop();
+      rectMode(CORNER);
+    }
+  } // Ends Function renderOCSets
+
+  renderClosedSet(){
+    fill(255,255,0); for(let i=0; i<this.curCSet.length; i++){rect(this.curCSet[i][1]*cellSize, this.curCSet[i][0]*cellSize, cellSize/2, cellSize/2);}
+  } // Ends Function renderClosedSet
+
+  renderOpenSet(){
+    fill(0,255,32); for(let i=0; i<this.curOSet.length; i++){rect(this.curOSet[i][1]*cellSize, this.curOSet[i][0]*cellSize, cellSize/2, cellSize/2);}
+  } // Ends Function renderOpenSet
 
 } // Ends Class GWDemoUIManager
-
-
-
-
-
-
-
-
-
-
-
-

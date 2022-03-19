@@ -1,0 +1,60 @@
+################################################################################
+>>> Data Structure Notes
+################################################################################
+
+  > The Open Set requires a Priority Queue (at least for UCS, A*, and
+  possibly GBF {it's been a long night}); as to enqueue SearchNode
+  objects WRT their cost and/xor heuristic values. Thankfully, via
+  Eyas Ranjous' code: I have one which is nicely reduced for this.
+  
+  > The Closed Set requires lookup that's as speedy as possible; which
+  I'll implement via a native JavaScript Map object; as experiments
+  with them in BG-III 'Spatial Partition Demo' have more than proven
+  their efficiency and performance superior to naive/other methods.
+
+################################################################################
+>>> [SEARCH NODE] CACHING POLICY
+################################################################################
+
+  > Current Policy: 'Explicit Pooling WRT 1x1 Mapping', i.e. on instantiation of
+    the PathFind object, generate a 2D array of SearchNode objects corresponding
+    to each map cell. Reset the per-path variables of ALL SearchNode instances to default values before each <pathFind> call.
+
+  > Cost of Policy (WRT Computation): Ω(cellsWide×cellsTall) at initialization, 
+    Ω(cellsWide×cellsTall) for every <pathFind> call.
+
+  > Cost of Policy (WRT Memory): Ω(cellsWide×cellsTall) at initialization, O(1)
+    for every <pathFind> call
+
+  > Improvement/Optimization Ideas: NOTE THAT THESE ARE *STRICTLY* AS-NEEDED for
+    ONLY the scenario in which there is a significant performance issue or other
+    bottleneck for which the cause or otherwise 'lowest-hanging fruit' happens to be the Pathfinder code. That said, they are as follows, ordered roughly by 'ease of implementation':
+
+    - Computation Improvement 1: Partition/Stagger calls-per-frame over a small
+      constant; which was a noticeably successful strategy utilized in the 2nd BG-III Spatial Partition Demo. Basically: select a small int (e.g. [4]),
+      ensure that all agents using the Pathfinder system have a unique int ID 
+      (i.e. the order of their creation), then compare (frameCount % 4) with each unit's (<...>.ID % 4). If equal: the unit can call <pathFind>, else
+      it must wait until so. This has the positive effect of reducing the number
+      of calls made per-frame, but has a theshold (also a small int) by which the wait times will be VERY noticeable (I think SP Demo hit this at [4]).
+
+    - Computation Improvement 2: encompasses what I currently think is the best
+      possible improvement. Enumerate via a counter the number of calls made to
+      <pathFind>; s.t. if a node is encountered for consideration into the open
+      set, the question of whether or not this node was previously encountered in this specific call can be definitively answered. This will, in theory,
+      reduce the computation to Ω(|openSet|∧|closedSet|); as it 'only touches what needs been touched - and only when needed'. However, this method will still be O(cellsWide×cellsTall) asymptotically speaking, but it might
+      make at least some positive difference.
+
+################################################################################
+>>> HEURISTIC [DIST] FUNCTION
+################################################################################
+
+> heur(pCell,qCell) = (dist(pCell,qCell)*TileType.PAVE), such that:
+  o 'heur' => distance method choice, i.e. euclidean xor manhattan distance
+  o dist(pCell,qCell) => total distance from current cell to goal cell in terms 
+    of CELLS (i.e. 'cell-space', i.e. NOT in terms of world units).
+  o dist(…)*TileType.PAVE => cell-space distance aforementioned then multiplied
+    by [PAVE] to reduce chance of inadmissability via 'overshooting the goal'; as [PAVE] is currently the TileType of least cost (alongside [ROAD] which has the same cost).
+  o Side Note: I originally utilized [ROAD] on the reason that it stands to be 
+    the most common type of map tile. However, on more thorough testing while
+    implementing major improvements to ZAC's unified PathFinder: I discovered that such was yielding underperforming (i.e. non-optimal) A* paths compared with those being produced by UCS (itself acting as a kind of 'control' to
+    this unintended-yet-important experiment).

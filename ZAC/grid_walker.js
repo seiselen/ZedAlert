@@ -219,7 +219,7 @@ class GridWalker{
   handleReroute(){
     //> if curLACell i.e. 'P_c+1' is not null and curLACell is [OCCUPIED] ==>
     if(this.curLACell != null && this.map.isCellOccupied(this.curLACell)){
-      console.log("Should not get here");
+
       //> if (c+1 == curPath.length-1) i.e. path ends at 'P_c+1' ==> remove P_c+1, then return ∎
       if(this.curWaypt+2 == this.curPath.length){
         this.curPath.pop(); 
@@ -246,7 +246,7 @@ class GridWalker{
       //> get the path from P_c to P_v; which will encompass the new: (P_c,⋯,P_v]
       let pathCell_c  = this.map.posToCoord(this.curPath[this.curWaypt]);
       let pathCell_v  = this.map.posToCoord(this.curPath[cellV_idx]);
-      let pathReRoute = this.pFind.findPath(pathCell_c,pathCell_v,32);
+      let pathReRoute = this.pFind.findPath(pathCell_c,pathCell_v,true);
 
       //> get the path from P_v to P_n, then shift; which will encompass: [P_v+1,⋯,P_n]
       let pathRemain  = this.curPath.splice(cellV_idx);
